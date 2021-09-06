@@ -239,21 +239,22 @@ func (s *SyncService) initializeLatestL1(ctcDeployHeight *big.Int) error {
 		s.SetLatestL1Timestamp(context.Timestamp)
 		s.SetLatestL1BlockNumber(context.BlockNumber)
 	} else {
-		// Prevent underflows
 		log.Info("Found latest index", "index", *index)
-		if *index != 0 {
-			*index = *index - 1
-		}
 		block := s.bc.GetBlockByNumber(*index)
 		if block == nil {
 			block = s.bc.CurrentBlock()
-			idx := block.Number().Uint64()
-			if idx > *index {
+			blockNum := block.Number().Uint64()
+			if blockNum > *index {
 				// This is recoverable with a reorg but should never happen
 				return fmt.Errorf("Current block height greater than index")
 			}
-			s.SetLatestIndex(&idx)
-			log.Info("Block not found, resetting index", "new", idx, "old", *index)
+			var idx *uint64
+			if blockNum > 0 {
+				num := blockNum - 1
+				idx = &num
+			}
+			s.SetLatestIndex(idx)
+			log.Info("Block not found, resetting index", "new", stringify(idx), "old", *index)
 		}
 		txs := block.Transactions()
 		if len(txs) != 1 {
