@@ -42,11 +42,11 @@ export class TransportDBMapHolder {
     this.dbPath = dbPath
     this.dbs={}
   }
-  
-  public async getTransportDbByChainId(chainId):Promise<TransportDB>{
-    var db=this.dbs[chainId]
+
+  public async getTransportDbByChainId(chainId):Promise<TransportDB> {
+    let db = this.dbs[chainId]
     if (!db) {
-      var leveldb = level(this.dbPath+"_"+chainId)
+      const leveldb = level(this.dbPath+"_"+chainId)
       await leveldb.open()
       db = new TransportDB(leveldb)
       this.dbs[chainId] = db
@@ -411,27 +411,6 @@ export class TransportDB {
     startIndex: number,
     endIndex: number
   ): Promise<TEntry[] | []> {
-    const entries = await this.db.range<TEntry>(
-      `${key}:index`,
-      startIndex,
-      endIndex
-    )
-    const results = []
-    for (const entry of entries) {
-      results.push(stringify(entry))
-    }
-    return results
-  }
-}
-
-const stringify = (entry) => {
-  if (entry === null || entry === undefined) {
-    return entry
-  }
-  if (entry.gasLimit) {
-    entry.gasLimit = BigNumber.from(entry.gasLimit).toString()
-  }
-  if (entry.decoded) {
-    entry.decoded.gasLimit = BigNumber.from(entry.decoded.gasLimit).toString()
+    return this.db.range<TEntry>(`${key}:index`, startIndex, endIndex)
   }
 }

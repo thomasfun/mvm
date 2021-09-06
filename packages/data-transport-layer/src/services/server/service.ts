@@ -2,6 +2,7 @@
 import { BaseService, Logger, Metrics } from '@eth-optimism/common-ts'
 import express, { Request, Response } from 'express'
 import promBundle from 'express-prom-bundle'
+import { Gauge } from 'prom-client'
 import cors from 'cors'
 import { BigNumber } from 'ethers'
 import { JsonRpcProvider } from '@ethersproject/providers'
@@ -28,6 +29,7 @@ export interface L1TransportServerOptions
   extends L1DataTransportServiceOptions {
   db: LevelUp
   dbs: TransportDBMapHolder
+  metrics: Metrics
 }
 
 const optionSettings = {
@@ -107,14 +109,26 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
   private _initializeApp() {
     // TODO: Maybe pass this in as a parameter instead of creating it here?
     this.state.app = express()
+
     if (this.options.useSentry) {
       this._initSentry()
     }
-    if (this.options.enableMetrics) {
-      this._initMetrics()
-    }
+
     this.state.app.use(cors())
+
+    // Add prometheus middleware to express BEFORE route registering
+    this.state.app.use(
+      // This also serves metrics on port 3000 at /metrics
+      promBundle({
+        // Provide metrics registry that other metrics uses
+        promRegistry: this.metrics.registry,
+        includeMethod: true,
+        includePath: true,
+      })
+    )
+
     this._registerAllRoutes()
+
     // Sentry error handling must be after all controllers
     // and before other error middleware
     if (this.options.useSentry) {
@@ -147,25 +161,6 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
     })
     this.state.app.use(Sentry.Handlers.requestHandler())
     this.state.app.use(Sentry.Handlers.tracingHandler())
-  }
-
-  /**
-   * Initialize Prometheus metrics collection and endpoint
-   */
-  private _initMetrics() {
-    this.metrics = new Metrics({
-      prefix: this.name,
-      labels: {
-        environment: this.options.nodeEnv,
-        network: this.options.ethNetworkName,
-        release: this.options.release,
-      },
-    })
-    const metricsMiddleware = promBundle({
-      includeMethod: true,
-      includePath: true,
-    })
-    this.state.app.use(metricsMiddleware)
   }
 
   /**
@@ -202,7 +197,7 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
         return res.json(json)
       } catch (e) {
         const elapsed = Date.now() - start
-        this.logger.info('Failed HTTP Request', {
+        this.logger.error('Failed HTTP Request', {
           method: req.method,
           url: req.url,
           elapsed,
@@ -216,9 +211,9 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
     })
   }
 
-  private async _getDb(chainId):Promise<TransportDB>{
-    var db = this.state.db
-    if(chainId&&chainId!=0){
+  private async _getDb(chainId):Promise<TransportDB> {
+    let db = this.state.db
+    if(chainId && chainId !==0) {
        db = await this.options.dbs.getTransportDbByChainId(chainId)
     }
     return db
@@ -234,9 +229,9 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
       async (req): Promise<SyncingResponse> => {
       	const chainId=BigNumber.from(req.params.chainId).toNumber()
         const db=await this._getDb(chainId)
-	
+
         const backend = req.query.backend || this.options.defaultBackend
-	
+
 
         let currentL2Block
         let highestL2BlockNumber
@@ -410,7 +405,7 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
       async (req): Promise<TransactionResponse> => {
         const chainId=BigNumber.from(req.params.chainId).toNumber()
         const db=await this._getDb(chainId)
-	
+
         const backend = req.query.backend || this.options.defaultBackend
         let transaction = null
 
@@ -449,7 +444,7 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
       async (req): Promise<TransactionResponse> => {
       	const chainId=BigNumber.from(req.params.chainId).toNumber()
         const db=await this._getDb(chainId)
-	
+
         const backend = req.query.backend || this.options.defaultBackend
         let transaction = null
 
@@ -550,7 +545,7 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
       async (req): Promise<StateRootResponse> => {
         const chainId=BigNumber.from(req.params.chainId).toNumber()
         const db=await this._getDb(chainId)
-	
+
         const backend = req.query.backend || this.options.defaultBackend
         let stateRoot = null
 
@@ -589,7 +584,7 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
       async (req): Promise<StateRootResponse> => {
         const chainId=BigNumber.from(req.params.chainId).toNumber()
         const db=await this._getDb(chainId)
-	
+
         const backend = req.query.backend || this.options.defaultBackend
         let stateRoot = null
 

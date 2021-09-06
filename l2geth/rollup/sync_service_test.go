@@ -532,12 +532,7 @@ func TestSyncServiceL2GasPrice(t *testing.T) {
 	}
 
 	l2GasPrice := big.NewInt(100000000000)
-<<<<<<< HEAD
-
-	state.SetState(service.gpoAddress, l2GasPriceSlot, common.BigToHash(l2GasPrice))
-=======
 	state.SetState(l2GasPriceOracleAddress, l2GasPriceSlot, common.BigToHash(l2GasPrice))
->>>>>>> @eth-optimism/batch-submitter@0.0.0-2021515123836
 	root, _ := state.Commit(false)
 
 	service.updateL2GasPrice(&root)

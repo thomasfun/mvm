@@ -5,8 +5,7 @@ import {
 } from '@ethersproject/providers'
 import { Watcher } from '@eth-optimism/core-utils'
 
-import { Contract, Transaction } from 'ethers'
-import { ethers } from 'ethers'
+import { ethers, Contract, Transaction } from 'ethers'
 
 export const initWatcher = async (
   l1Provider: JsonRpcProvider,
@@ -85,7 +84,7 @@ export const waitForXDomainTransaction = async (
   //   dest,
   //   xDomainMsgHash
   // )
-  
+
   await sleep(5000)
   const blockNumber = await dest.provider.getBlockNumber()
   const startingBlock = Math.max(blockNumber - 10, 0)
@@ -97,7 +96,7 @@ export const waitForXDomainTransaction = async (
   const logs = await dest.provider.getLogs(filter)
   const matches = logs.filter((log: any) => {
     log.data === xDomainMsgHash})
-  var remoteReceipt = null
+  let remoteReceipt = null
   // Message was relayed in the past
   if (matches.length > 0) {
     if (matches.length > 1) {
@@ -107,8 +106,8 @@ export const waitForXDomainTransaction = async (
     }
     remoteReceipt = dest.provider.getTransactionReceipt(matches[0].transactionHash)
   }
-  
-  if(remoteReceipt==null){
+
+  if(remoteReceipt == null) {
     // Message has yet to be relayed, poll until it is found
     remoteReceipt=await new Promise(async (resolve, reject) => {
       dest.provider.on(filter, async (log: any) => {
@@ -126,9 +125,9 @@ export const waitForXDomainTransaction = async (
       })
     })
   }
-    
+
   console.log(ethers.utils.id('DepositFinalized(address indexed,uint256)'),remoteReceipt.logs)
-    
+
   const remoteTx = await dest.provider.getTransaction(
     remoteReceipt.transactionHash
   )

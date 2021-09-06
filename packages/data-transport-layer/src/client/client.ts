@@ -18,8 +18,8 @@ import {
 export class L1DataTransportClient {
   public _chainId:number
   constructor(private url: string) {this._chainId=0}
-  
-  public setChainId(chainId:number){
+
+  public setChainId(chainId:number) {
     this._chainId=chainId
   }
 
@@ -72,7 +72,7 @@ export class L1DataTransportClient {
   public async getLatestStateRootBatch(): Promise<StateRootBatchResponse> {
     return this._get(`/batch/stateroot/latest/${this._chainId}`)
   }
-  
+
   private async _get<TResponse>(endpoint: string): Promise<TResponse> {
     return (await fetch(`${this.url}${endpoint}`)).json()
   }

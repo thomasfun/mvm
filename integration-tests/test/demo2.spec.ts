@@ -11,27 +11,20 @@ export const getEnvironment = async (): Promise<{
     l1Provider: JsonRpcProvider,
     l2Provider: JsonRpcProvider,
     l1Wallet: Wallet,
-    l2Wallet: Wallet,
-    AddressManager: Contract,
-    watcher: Watcher
+    l2Wallet: Wallet
 }> => {
-    const l1Provider = new JsonRpcProvider("http://localhost:9545")
-    const l2Provider = new JsonRpcProvider("http://localhost:8545")
-    const l1Wallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", l1Provider)
-    const l2Wallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", l2Provider)
+    l1Provider = new JsonRpcProvider("http://localhost:9545")
+    l2Provider = new JsonRpcProvider("http://localhost:8545")
+    l1Wallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", l1Provider)
+    l2Wallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", l2Provider)
 
-    const addressManagerInterface = null
-    const AddressManager = null
-    const watcher = null
-    
+
 
     return {
         l1Provider,
         l2Provider,
         l1Wallet,
-        l2Wallet,
-        AddressManager,
-        watcher
+        l2Wallet
     }
 }
 
@@ -50,27 +43,27 @@ let watcher: Watcher
 describe('Fee Payment Integration Tests', async () => {
   const envPath = path.join(__dirname, '/.env');
   dotenv.config({ path: envPath })
-  
+
   let OVM_L1ETHGateway: Contract
   let MVM_GasOracle: Contract
   let OVM_L2CrossDomainMessenger: Contract
-  
+
   before(async () => {
     const system = await getEnvironment()
     l1Provider = system.l1Provider
     l2Provider = system.l2Provider
     l1Wallet = system.l1Wallet
     l2Wallet = system.l2Wallet
-    
+
     const addressManagerAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
     const addressManagerInterface = getContractInterface('Lib_AddressManager')
-    const AddressManager = new Contract(addressManagerAddress, addressManagerInterface, l1Provider)
+    AddressManager = new Contract(addressManagerAddress, addressManagerInterface, l1Provider)
     MVM_GasOracle = new Contract(
       MVM_GasOracle_ADDRESS,
       getContractInterface('MVM_GasOracle'),
       l2Wallet
     )
-    
+
     console.log(
       await AddressManager.getAddress('Proxy__OVM_L1ETHGateway'),
       await AddressManager.getAddress('OVM_L1ERC20Gateway'),
@@ -90,9 +83,9 @@ describe('Fee Payment Integration Tests', async () => {
   })
 
   beforeEach(async () => {
-    
+    // do nothing.
   })
-  
+
   it.only('sequencer rejects transaction with a non-multiple-of-1M gasPrice', async () => {
     try {
       await MVM_GasOracle.setPrice(1000, {

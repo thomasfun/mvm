@@ -1,9 +1,10 @@
 /* Imports: External */
 import { fromHexString, EventArgsAddressSet } from '@eth-optimism/core-utils'
-import { BaseService } from '@eth-optimism/common-ts'
+import { BaseService, Metrics } from '@eth-optimism/common-ts'
 import { JsonRpcProvider } from '@ethersproject/providers'
 import { LevelUp } from 'levelup'
 import { ethers, constants } from 'ethers'
+import { Gauge } from 'prom-client'
 
 /* Imports: Internal */
 import { TransportDB, TransportDBMapHolder, TransportDBMap} from '../../db/transport-db'
@@ -19,11 +20,28 @@ import { handleEventsTransactionEnqueued } from './handlers/transaction-enqueued
 import { handleEventsSequencerBatchAppended } from './handlers/sequencer-batch-appended'
 import { handleEventsStateBatchAppended } from './handlers/state-batch-appended'
 import { L1DataTransportServiceOptions } from '../main/service'
+import { MissingElementError, EventName } from './handlers/errors'
+
+interface L1IngestionMetrics {
+  highestSyncedL1Block: Gauge<string>
+}
+
+const registerMetrics = ({
+  client,
+  registry,
+}: Metrics): L1IngestionMetrics => ({
+  highestSyncedL1Block: new client.Gauge({
+    name: 'data_transport_layer_highest_synced_l1_block',
+    help: 'Highest Synced L1 Block Number',
+    registers: [registry],
+  }),
+})
 
 export interface L1IngestionServiceOptions
   extends L1DataTransportServiceOptions {
   db: LevelUp
   dbs: TransportDBMapHolder
+  metrics: Metrics
 }
 
 const optionSettings = {
@@ -64,6 +82,8 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
     super('L1_Ingestion_Service', options, optionSettings)
   }
 
+  private l1IngestionMetrics: L1IngestionMetrics
+
   private state: {
     db: TransportDB
     dbs: TransportDBMap
@@ -75,6 +95,7 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
   protected async _init(): Promise<void> {
     this.state.db = new TransportDB(this.options.db)
     this.state.dbs = {}
+    this.l1IngestionMetrics = registerMetrics(this.metrics)
     this.state.l1RpcProvider =
       typeof this.options.l1RpcProvider === 'string'
         ? new JsonRpcProvider(this.options.l1RpcProvider)
@@ -198,6 +219,8 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
 
         await this.state.db.setHighestSyncedL1Block(targetL1Block)
 
+        this.l1IngestionMetrics.highestSyncedL1Block.set(targetL1Block)
+
         if (
           currentL1Block - highestSyncedL1Block <
           this.options.logsPerPollingInterval
@@ -205,7 +228,50 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
           await sleep(this.options.pollingInterval)
         }
       } catch (err) {
-        if (!this.running || this.options.dangerouslyCatchAllErrors) {
+        if (err instanceof MissingElementError) {
+          // Different functions for getting the last good element depending on the event type.
+          const handlers = {
+            SequencerBatchAppended: this.state.db.getLatestTransactionBatch,
+            StateBatchAppended: this.state.db.getLatestStateRootBatch,
+            TransactionEnqueued: this.state.db.getLatestEnqueue,
+          }
+
+          // Find the last good element and reset the highest synced L1 block to go back to the
+          // last good element. Will resync other event types too but we have no issues with
+          // syncing the same events more than once.
+          const eventName = err.name
+          if (!(eventName in handlers)) {
+            throw new Error(
+              `unable to recover from missing event, no handler for ${eventName}`
+            )
+          }
+
+          const lastGoodElement: {
+            blockNumber: number
+          } = await handlers[eventName]()
+
+          // Erroring out here seems fine. An error like this is only likely to occur quickly after
+          // this service starts up so someone will be here to deal with it. Automatic recovery is
+          // nice but not strictly necessary. Could be a good feature for someone to implement.
+          if (lastGoodElement === null) {
+            throw new Error(`unable to recover from missing event`)
+          }
+
+          // Rewind back to the block number that the last good element was in.
+          await this.state.db.setHighestSyncedL1Block(
+            lastGoodElement.blockNumber
+          )
+
+          this.l1IngestionMetrics.highestSyncedL1Block.set(
+            lastGoodElement.blockNumber
+          )
+
+          // Something we should be keeping track of.
+          this.logger.warn('recovering from a missing event', {
+            eventName,
+            lastGoodBlockNumber: lastGoodElement.blockNumber,
+          })
+        } else if (!this.running || this.options.dangerouslyCatchAllErrors) {
           this.logger.error('Caught an unhandled error', {
             message: err.toString(),
             stack: err.stack,
@@ -294,17 +360,17 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
         const tick = Date.now()
 
         for (const event of events) {
-          
+
           const extraData = await handlers.getExtraData(
             event,
             this.state.l1RpcProvider
           )
           const parsedEvent = await handlers.parseEvent(event, extraData, this.options.l2ChainId)
-          
+
           // filter chainId
-          var chainId = event.args._chainId.toNumber()
-          var db = this.state.db
-          if (chainId && chainId != 0){
+          const chainId = event.args._chainId.toNumber()
+          let db = this.state.db
+          if (chainId && chainId !== 0) {
              db = await this.options.dbs.getTransportDbByChainId(chainId)
           }
         }
@@ -350,7 +416,7 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
 
     for (let i = 0; i < currentL1Block; i += 1000000) {
       const events = await this.state.contracts.Lib_AddressManager.queryFilter(
-        this.state.contracts.Lib_AddressManager.filters.AddressSet(),
+        this.state.contracts.Lib_AddressManager.filters.OwnershipTransferred(),
         i,
         Math.min(i + 1000000, currentL1Block)
       )

@@ -3,6 +3,7 @@ import { BigNumber } from 'ethers'
 
 /**
  * Converts a string or buffer to a '0x'-prefixed hex string.
+ *
  * @param buf String or buffer to convert.
  * @returns '0x'-prefixed string.
  */
@@ -12,6 +13,7 @@ export const toHexString = (buf: Buffer | string): string => {
 
 /**
  * Converts a '0x'-prefixed string to a buffer.
+ *
  * @param str '0x'-prefixed string to convert.
  * @returns Hex buffer.
  */

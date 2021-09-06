@@ -3,7 +3,6 @@ import { Promise as bPromise } from 'bluebird'
 import { Signer, ethers, Contract, providers } from 'ethers'
 import { TransactionReceipt } from '@ethersproject/abstract-provider'
 import { getContractInterface, getContractFactory } from '@metis.io/contracts'
-import { getContractInterface as getNewContractInterface } from '@metis.io/contracts'
 import {
   L2Block,
   RollupInfo,
@@ -398,8 +397,9 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
         this.l2ChainId,
         queueIndex
       )
-    if(timestamp==0&&blockNumber==0)
+    if(timestamp === 0 && blockNumber === 0) {
       return true
+    }
     // TODO: Verify queue element hash equality. The queue element hash can be computed with:
     // keccak256( abi.encode( msg.sender, _target, _gasLimit, _data))
 
@@ -627,7 +627,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
   }> {
     const manager = new Contract(
       this.addressManagerAddress,
-      getNewContractInterface('Lib_AddressManager'),
+      getContractInterface('Lib_AddressManager'),
       this.signer.provider
     )
 
@@ -636,7 +636,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
     )
     const container = new Contract(
       addr,
-      getNewContractInterface('iOVM_ChainStorageContainer'),
+      getContractInterface('iOVM_ChainStorageContainer'),
       this.signer.provider
     )
 

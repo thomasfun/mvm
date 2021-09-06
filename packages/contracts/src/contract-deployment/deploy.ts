@@ -57,11 +57,10 @@ export const deploy = async (
       continue
     }
 
-    var addr=await AddressManager.getAddress(name);
-    console.log(name+":"+addr);
-    var fac=contractDeployParameters.factory
-                .connect(config.deploymentSigner)
-    if(addr == "0x0000000000000000000000000000000000000000"){
+    const addr = await AddressManager.getAddress(name);
+    console.log(name + ":" + addr);
+    const fac = contractDeployParameters.factory.connect(config.deploymentSigner)
+    if (addr === "0x0000000000000000000000000000000000000000") {
       try {
         contracts[name] = await fac
           .connect(config.deploymentSigner)
@@ -80,11 +79,11 @@ export const deploy = async (
         console.error(`Error deploying ${name}: ${err}`)
         failedDeployments.push(name)
       }
-    }else{
+    } else{
         const d=fac.attach(addr);
         contracts[name] = d;
     }
-    console.log(name+":"+contracts[name].address);
+    console.log(name + ":" + contracts[name].address);
   }
 
   for (const [name, contractDeployParameters] of Object.entries(

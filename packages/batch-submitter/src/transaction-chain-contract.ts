@@ -49,9 +49,9 @@ const appendSequencerBatch = async (
   const methodId = keccak256(
     Buffer.from(APPEND_SEQUENCER_BATCH_METHOD_ID)
   ).slice(2, 10)
-  var calldata = encodeAppendSequencerBatch(batch)
+  let calldata = encodeAppendSequencerBatch(batch)
   //add chain id parameter before original batch
-  calldata=encodeHex(batch.chainId, 64)+calldata
+  calldata = encodeHex(batch.chainId, 64) + calldata
   return OVM_CanonicalTransactionChain.signer.sendTransaction({
     to: OVM_CanonicalTransactionChain.address,
     data: '0x' + methodId + calldata,

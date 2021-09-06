@@ -22,6 +22,7 @@ const applyL2ChainId = async (contact) => {
 
 describe('MVM_L2ChainManagerOnL1', () => {
   before(async () => {
+      /* tslint:disable:no-empty */
   })
 
   let AddressManager: Contract
@@ -45,7 +46,7 @@ describe('MVM_L2ChainManagerOnL1', () => {
   })
 
   describe('applyL2ChainId', () => {
-    
+
     it('should return the new chain id which incresed by one', async () => {
       const t=await applyL2ChainId(MVM_L2ChainManagerOnL1);
       await t.wait();
