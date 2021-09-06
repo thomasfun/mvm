@@ -75,7 +75,7 @@ contract OVM_StateCommitmentChain is iOVM_StateCommitmentChain, Lib_AddressResol
         )
     {
         return iOVM_ChainStorageContainer(
-            resolve("OVM_ChainStorageContainer:SCC:batches")
+            resolve("OVM_ChainStorageContainer-SCC-batches")
         );
     }
 

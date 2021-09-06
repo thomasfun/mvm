@@ -4,10 +4,16 @@ import {
   TxGasPrice,
   toRpcHexString,
 } from '@eth-optimism/core-utils'
-import { Wallet, BigNumber, Contract } from 'ethers'
+import { Wallet, BigNumber, Contract, ContractFactory } from 'ethers'
 import { ethers } from 'hardhat'
 import chai, { expect } from 'chai'
-import { sleep, l2Provider, l1Provider } from './shared/utils'
+import {
+  sleep,
+  l2Provider,
+  DEFAULT_TRANSACTION,
+  fundUser,
+  expectApprox,
+} from './shared/utils'
 import chaiAsPromised from 'chai-as-promised'
 import { OptimismEnv } from './shared/env'
 import {
@@ -21,14 +27,6 @@ chai.use(solidity)
 describe('Basic RPC tests', () => {
   let env: OptimismEnv
   let wallet: Wallet
-
-  const DEFAULT_TRANSACTION = {
-    to: '0x' + '1234'.repeat(10),
-    gasLimit: 33600000000001,
-    gasPrice: 0,
-    data: '0x',
-    value: 0,
-  }
 
   const provider = injectL2Context(l2Provider)
 
@@ -131,13 +129,6 @@ describe('Basic RPC tests', () => {
       const tx = {
         ...DEFAULT_TRANSACTION,
         gasLimit: 1,
-<<<<<<< HEAD
-        gasPrice: 1,
-      }
-
-      await expect(env.l2Wallet.sendTransaction(tx)).to.be.rejectedWith(
-        'fee too low: 1, use at least tx.gasLimit = 33600000000001 and tx.gasPrice = 1'
-=======
         gasPrice: TxGasPrice,
       }
       const fee = tx.gasPrice.mul(tx.gasLimit)
@@ -157,12 +148,11 @@ describe('Basic RPC tests', () => {
 
       await expect(env.l2Wallet.sendTransaction(tx)).to.be.rejectedWith(
         `tx.gasPrice must be ${TxGasPrice.toString()}`
->>>>>>> e389ba105fa167d195444d047cdeae29182d1e45
       )
     })
 
     it('should correctly report OOG for contract creations', async () => {
-      const factory = await ethers.getContractFactory('TestOOG')
+      const factory = await ethers.getContractFactory('TestOOGInConstructor')
 
       await expect(factory.connect(wallet).deploy()).to.be.rejectedWith(
         'gas required exceeds allowance'
@@ -215,6 +205,32 @@ describe('Basic RPC tests', () => {
         'Contract creation code contains unsafe opcodes. Did you use the right compiler or pass an unsafe constructor argument?'
       )
     })
+
+    it('should allow eth_calls with nonzero value', async () => {
+      // Deploy a contract to check msg.value of the call
+      const Factory__ValueContext: ContractFactory = await ethers.getContractFactory(
+        'ValueContext',
+        wallet
+      )
+      const ValueContext: Contract = await Factory__ValueContext.deploy()
+      await ValueContext.deployTransaction.wait()
+
+      // Fund account to call from
+      const from = wallet.address
+      const value = 15
+      await fundUser(env.watcher, env.l1Bridge, value, from)
+
+      // Do the call and check msg.value
+      const data = ValueContext.interface.encodeFunctionData('getCallValue')
+      const res = await provider.call({
+        to: ValueContext.address,
+        from,
+        data,
+        value,
+      })
+
+      expect(res).to.eq(BigNumber.from(value))
+    })
   })
 
   describe('eth_getTransactionReceipt', () => {
@@ -249,10 +265,14 @@ describe('Basic RPC tests', () => {
       const req: TransactionRequest = {
         ...revertingDeployTx,
 <<<<<<< HEAD
+<<<<<<< HEAD
         gasLimit: 1051391908999999, // override gas estimation
 =======
         gasLimit: 17700899, // override gas estimation
 >>>>>>> e389ba105fa167d195444d047cdeae29182d1e45
+=======
+        gasLimit: 27700899, // override gas estimation
+>>>>>>> @eth-optimism/batch-submitter@0.0.0-2021515123836
       }
 
       const tx = await wallet.sendTransaction(req)
@@ -280,7 +300,6 @@ describe('Basic RPC tests', () => {
       await result.wait()
 
       const transaction = (await provider.getTransaction(result.hash)) as any
-      expect(transaction.txType).to.equal('EIP155')
       expect(transaction.queueOrigin).to.equal('sequencer')
       expect(transaction.transactionIndex).to.be.eq(0)
       expect(transaction.gasLimit).to.be.deep.eq(BigNumber.from(tx.gasLimit))
@@ -301,7 +320,6 @@ describe('Basic RPC tests', () => {
       expect(block.number).to.not.equal(0)
       expect(typeof block.stateRoot).to.equal('string')
       expect(block.transactions.length).to.equal(1)
-      expect(block.transactions[0].txType).to.equal('EIP155')
       expect(block.transactions[0].queueOrigin).to.equal('sequencer')
       expect(block.transactions[0].l1TxOrigin).to.equal(null)
     })
@@ -381,10 +399,15 @@ describe('Basic RPC tests', () => {
         value: 0,
       })
 <<<<<<< HEAD
+<<<<<<< HEAD
       expect(estimate).to.be.eq(33600000119751)
 =======
       expect(estimate).to.be.eq(5920012)
 >>>>>>> e389ba105fa167d195444d047cdeae29182d1e45
+=======
+      // Expect gas to be less than or equal to the target plus 1%
+      expectApprox(estimate, 5920012, 1)
+>>>>>>> @eth-optimism/batch-submitter@0.0.0-2021515123836
     })
 
     it('should return a gas estimate that grows with the size of data', async () => {

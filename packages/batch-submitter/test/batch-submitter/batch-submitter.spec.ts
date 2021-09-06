@@ -37,7 +37,6 @@ import {
 } from '@eth-optimism/core-utils'
 import { Logger, Metrics } from '@eth-optimism/common-ts'
 
-const DECOMPRESSION_ADDRESS = '0x4200000000000000000000000000000000000008'
 const DUMMY_ADDRESS = '0x' + '00'.repeat(20)
 const EXAMPLE_STATE_ROOT =
   '0x16b7f83f409c7195b1f4fde5652f1b54a4477eacb6db7927691becafba5f8801'
@@ -97,7 +96,7 @@ describe('BatchSubmitter', () => {
     )
     await AddressManager.setAddress(
       'OVM_DecompressionPrecompileAddress',
-      DECOMPRESSION_ADDRESS
+      predeploys.OVM_SequencerEntrypoint
     )
 
     Mock__OVM_ExecutionManager = await smockit(
@@ -485,7 +484,7 @@ describe('Batch Submitter with Ganache', () => {
       gasPrices.push(gasPrice)
 
       const tx = signer.sendTransaction({
-        to: DECOMPRESSION_ADDRESS,
+        to: predeploys.OVM_SequencerEntrypoint,
         value: 88,
         nonce: 0,
         gasPrice,

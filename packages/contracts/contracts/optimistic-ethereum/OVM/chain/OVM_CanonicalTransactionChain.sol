@@ -100,7 +100,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
         )
     {
         return iOVM_ChainStorageContainer(
-            resolve("OVM_ChainStorageContainer:CTC:batches")
+            resolve("OVM_ChainStorageContainer-CTC-batches")
         );
     }
 
@@ -117,7 +117,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
         )
     {
         return iOVM_ChainStorageContainer(
-            resolve("OVM_ChainStorageContainer:CTC:queue")
+            resolve("OVM_ChainStorageContainer-CTC-queue")
         );
     }
 

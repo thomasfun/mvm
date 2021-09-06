@@ -7,7 +7,7 @@ import { MerkleTree } from 'merkletreejs'
 import { fromHexString, sleep } from '@eth-optimism/core-utils'
 import { Logger, BaseService, Metrics } from '@eth-optimism/common-ts'
 
-import { loadContract, loadContractFromManager } from '@metis.io/contracts'
+import { loadContract, loadContractFromManager, predeploys } from '@metis.io/contracts'
 import { StateRootBatchHeader, SentMessage, SentMessageProof } from './types'
 import mongoose from "mongoose"
 import ChainStore from "./store/chain-store"
@@ -143,7 +143,7 @@ export class MessageRelayerService extends BaseService<MessageRelayerOptions> {
     this.logger.info('Connecting to OVM_L2ToL1MessagePasser...')
     this.state.OVM_L2ToL1MessagePasser = loadContract(
       'OVM_L2ToL1MessagePasser',
-      '0x4200000000000000000000000000000000000000',
+      predeploys.OVM_L2ToL1MessagePasser,
       this.options.l2RpcProvider
     )
     this.logger.info('Connected to OVM_L2ToL1MessagePasser', {
