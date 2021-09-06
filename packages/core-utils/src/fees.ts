@@ -21,7 +21,7 @@ export interface EncodableL2GasLimit {
   l2GasPrice: BigNumber | number
 }
 
-function encode(input: EncodableL2GasLimit): BigNumber {
+const encode = (input: EncodableL2GasLimit): BigNumber => {
   const { data } = input
   let { l1GasPrice, l2GasLimit, l2GasPrice } = input
   if (typeof l1GasPrice === 'number') {
@@ -45,7 +45,7 @@ function encode(input: EncodableL2GasLimit): BigNumber {
   return rounded.add(roundedScaledL2GasLimit)
 }
 
-function decode(fee: BigNumber | number): BigNumber {
+const decode = (fee: BigNumber | number): BigNumber => {
   if (typeof fee === 'number') {
     fee = BigNumber.from(fee)
   }
@@ -59,7 +59,7 @@ export const TxGasLimit = {
   decode,
 }
 
-export function ceilmod(a: BigNumber | number, b: BigNumber | number) {
+export const ceilmod = (a: BigNumber | number, b: BigNumber | number) => {
   if (typeof a === 'number') {
     a = BigNumber.from(a)
   }
@@ -75,7 +75,7 @@ export function ceilmod(a: BigNumber | number, b: BigNumber | number) {
   return rounded
 }
 
-export function calculateL1GasLimit(data: string | Buffer): BigNumber {
+export const calculateL1GasLimit = (data: string | Buffer): BigNumber => {
   const [zeroes, ones] = zeroesAndOnes(data)
   const zeroesCost = zeroes * txDataZeroGas
   const onesCost = ones * txDataNonZeroGasEIP2028
@@ -85,7 +85,7 @@ export function calculateL1GasLimit(data: string | Buffer): BigNumber {
 
 }
 
-export function zeroesAndOnes(data: Buffer | string): Array<number> {
+export const zeroesAndOnes = (data: Buffer | string): Array<number> => {
   if (typeof data === 'string') {
     data = Buffer.from(remove0x(data), 'hex')
   }

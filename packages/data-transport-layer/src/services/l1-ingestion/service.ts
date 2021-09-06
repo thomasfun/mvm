@@ -54,6 +54,9 @@ const optionSettings = {
       return validators.isUrl(val) || validators.isJsonRpcProvider(val)
     },
   },
+  l2ChainId: {
+    validate: validators.isInteger,
+  },
 }
 
 export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
@@ -67,7 +70,6 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
     contracts: OptimismContracts
     l1RpcProvider: JsonRpcProvider
     startingL1BlockNumber: number
-    l2ChainId: number
   } = {} as any
 
   protected async _init(): Promise<void> {
@@ -116,10 +118,6 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
       this.state.l1RpcProvider,
       this.options.addressManager
     )
-
-    this.state.l2ChainId = ethers.BigNumber.from(
-      await this.state.contracts.OVM_ExecutionManager.ovmCHAINID()
-    ).toNumber()
 
     const startingL1BlockNumber = await this.state.db.getStartingL1Block()
     if (startingL1BlockNumber) {
@@ -301,16 +299,14 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
             event,
             this.state.l1RpcProvider
           )
-          const parsedEvent = await handlers.parseEvent(event, extraData, this.state.l2ChainId)
+          const parsedEvent = await handlers.parseEvent(event, extraData, this.options.l2ChainId)
           
           // filter chainId
           var chainId = event.args._chainId.toNumber()
-          var db=this.state.db
-          if(chainId&&chainId!=0){
+          var db = this.state.db
+          if (chainId && chainId != 0){
              db = await this.options.dbs.getTransportDbByChainId(chainId)
           }
-          
-          await handlers.storeEvent(parsedEvent, db)
         }
 
         const tock = Date.now()
@@ -326,6 +322,7 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
 
   /**
    * Gets the address of a contract at a particular block in the past.
+   *
    * @param contractName Name of the contract to get an address for.
    * @param blockNumber Block at which to get an address.
    * @return Contract address.
