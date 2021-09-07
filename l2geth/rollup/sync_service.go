@@ -859,14 +859,11 @@ func (s *SyncService) verifyFee(tx *types.Transaction) error {
 
 	// Only count the calldata here as the overhead of the fully encoded
 	// RLP transaction is handled inside of EncodeL2GasLimit
-	expectedTxGasLimit := fees.EncodeTxGasLimit(tx.Data(), l1GasPrice, l2GasLimit, l2GasPrice)
-	if err != nil {
-		return err
-	}
+	fee := fees.EncodeTxGasLimit(tx.Data(), l1GasPrice, l2GasLimit, l2GasPrice)
 
 	// This should only happen if the unscaled transaction fee is greater than 18.44 ETH
-	if !expectedTxGasLimit.IsUint64() {
-		return fmt.Errorf("fee overflow: %s", expectedTxGasLimit.String())
+	if !fee.IsUint64() {
+		return fmt.Errorf("fee overflow: %s", fee.String())
 	}
 
 	// Compute the user's fee
@@ -878,10 +875,11 @@ func (s *SyncService) verifyFee(tx *types.Transaction) error {
 		return fmt.Errorf("fee too low: %d, use at least tx.gasLimit = %d and tx.gasPrice = %d", paying, fee.Uint64(), fees.BigTxGasPrice)
 	}
 
-
+	userFee := new(big.Int).Mul(new(big.Int).SetUint64(tx.Gas()), tx.GasPrice())
+	expectedFee := new(big.Int).Mul(fee, fees.BigTxGasPrice)
 	opts := fees.PaysEnoughOpts{
-		UserFee:       paying,
-		ExpectedFee:   expectedTxGasLimit.Mul(expectedTxGasLimit, fees.BigTxGasPrice),
+		UserFee:       userFee,
+		ExpectedFee:   expecting,
 		ThresholdUp:   s.feeThresholdUp,
 		ThresholdDown: s.feeThresholdDown,
 	}
@@ -889,10 +887,11 @@ func (s *SyncService) verifyFee(tx *types.Transaction) error {
 	if err := fees.PaysEnough(&opts); err != nil {
 		if errors.Is(err, fees.ErrFeeTooLow) {
 			return fmt.Errorf("%w: %d, use at least tx.gasLimit = %d and tx.gasPrice = %d",
-				fees.ErrFeeTooLow, userFee, expectedTxGasLimit, fees.BigTxGasPrice)
+				fees.ErrFeeTooLow, userFee, fee, fees.BigTxGasPrice)
 		}
 		if errors.Is(err, fees.ErrFeeTooHigh) {
-			return fmt.Errorf("%w: %d", fees.ErrFeeTooHigh, userFee)
+			return fmt.Errorf("%w: %d, use less than %d * %f", fees.ErrFeeTooHigh, userFee,
+				expectedFee, s.feeThresholdDown)
 		}
 		return err
 	}
