@@ -28,12 +28,12 @@ import (
 	"github.com/MetisProtocol/l2geth/core/state"
 	"github.com/MetisProtocol/l2geth/core/types"
 	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/diffdb"
 	"github.com/MetisProtocol/l2geth/eth/downloader"
 	"github.com/MetisProtocol/l2geth/ethdb"
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rpc"
+
 )
 
 // Backend interface provides the common API services (that are provided by
@@ -87,13 +87,11 @@ type Backend interface {
 	CurrentBlock() *types.Block
 
 	// Optimism-specific API
-	SetTimestamp(timestamp int64)
 	IsVerifier() bool
 	IsSyncing() bool
 	GetEthContext() (uint64, uint64)
 	GetRollupContext() (uint64, uint64, uint64)
 	GasLimit() uint64
-	GetDiff(*big.Int) (diffdb.Diff, error)
 	SuggestL1GasPrice(ctx context.Context) (*big.Int, error)
 	SetL1GasPrice(context.Context, *big.Int) error
 	SuggestL2GasPrice(context.Context) (*big.Int, error)
