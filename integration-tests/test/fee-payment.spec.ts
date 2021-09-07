@@ -15,9 +15,8 @@ import { Direction } from './shared/watcher-utils'
 
 
 describe('Fee Payment Integration Tests', async () => {
-  const other = '0x1234123412341234123412341234123412341234'
-
   let env: OptimismEnv
+  const other = '0x1234123412341234123412341234123412341234'
   before(async () => {
     env = await OptimismEnv.new()
   })

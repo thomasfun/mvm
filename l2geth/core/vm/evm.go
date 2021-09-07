@@ -17,10 +17,7 @@
 package vm
 
 import (
-	"bytes"
-	"fmt"
 	"math/big"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -32,71 +29,6 @@ import (
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rollup/dump"
 )
-
-// codec is a decoder for the return values of the execution manager. It decodes
-// (bool, bytes) from the bytes that are returned from both
-// `ExecutionManager.run()` and `ExecutionManager.simulateMessage()`
-var codec abi.ABI
-
-// innerData represents the results returned from the ExecutionManager
-// that are wrapped in `bytes`
-type innerData struct {
-	Success    bool   `abi:"_success"`
-	ReturnData []byte `abi:"_returndata"`
-}
-
-// runReturnData represents the actual return data of the ExecutionManager.
-// It wraps (bool, bytes) in an ABI encoded bytes
-type runReturnData struct {
-	ReturnData []byte `abi:"_returndata"`
-}
-
-// Will be removed when we update EM to return data in `run`.
-var deadPrefix, fortyTwoPrefix, zeroPrefix []byte
-
-func init() {
-	const abidata = `
-	[
-		{
-			"type": "function",
-			"name": "call",
-			"constant": true,
-			"inputs": [],
-			"outputs": [
-				{
-					"name": "_success",
-					"type": "bool"
-				},
-				{
-					"name": "_returndata",
-					"type": "bytes"
-				}
-			]
-		},
-		{
-			"type": "function",
-			"name": "blob",
-			"constant": true,
-			"inputs": [],
-			"outputs": [
-				{
-					"name": "_returndata",
-					"type": "bytes"
-				}
-			]
-		}
-	]
-`
-
-	var err error
-	codec, err = abi.JSON(strings.NewReader(abidata))
-	if err != nil {
-		panic(fmt.Errorf("unable to create abi decoder: %v", err))
-	}
-	deadPrefix = hexutil.MustDecode("0xdeaddeaddeaddeaddeaddeaddeaddeaddead")
-	zeroPrefix = hexutil.MustDecode("0x000000000000000000000000000000000000")
-	fortyTwoPrefix = hexutil.MustDecode("0x420000000000000000000000000000000000")
-}
 
 // emptyCodeHash is used by create to ensure deployment is disallowed to already
 // deployed contract addresses (relevant after the account abstraction).
@@ -161,7 +93,6 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
 			return RunPrecompiledContract(p, input, contract)
 		}
 	}
-
 	for _, interpreter := range evm.interpreters {
 		if interpreter.CanRun(contract.Code) {
 			if evm.interpreter != interpreter {
@@ -175,7 +106,6 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
 			return interpreter.Run(contract, input, readOnly)
 		}
 	}
-
 	return nil, ErrNoCompatibleInterpreter
 }
 
@@ -201,16 +131,8 @@ type Context struct {
 	Time        *big.Int       // Provides information for TIME
 	Difficulty  *big.Int       // Provides information for DIFFICULTY
 
-	// OVM_ADDITION
-	EthCallSender             *common.Address
-	IsL1ToL2Message           bool
-	IsSuccessfulL1ToL2Message bool
-	OvmExecutionManager       dump.OvmDumpAccount
-	OvmStateManager           dump.OvmDumpAccount
-	OvmSafetyChecker          dump.OvmDumpAccount
-	OvmL2CrossDomainMessenger dump.OvmDumpAccount
-	OvmETH                    dump.OvmDumpAccount
-	OvmL2StandardBridge       dump.OvmDumpAccount
+	// OVM information
+	L1MessageSender common.Address // Provides information for L1MESSAGESENDER
 }
 
 // EVM is the Ethereum Virtual Machine base object and provides
@@ -253,17 +175,6 @@ type EVM struct {
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
 func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
-	// Add the ExecutionManager and StateManager to the Context here to
-	// prevent the need to update function signatures across the codebase.
-	if chainConfig != nil && chainConfig.StateDump != nil {
-		ctx.OvmExecutionManager = chainConfig.StateDump.Accounts["OVM_ExecutionManager"]
-		ctx.OvmStateManager = chainConfig.StateDump.Accounts["OVM_StateManager"]
-		ctx.OvmSafetyChecker = chainConfig.StateDump.Accounts["OVM_SafetyChecker"]
-		ctx.OvmL2CrossDomainMessenger = chainConfig.StateDump.Accounts["OVM_L2CrossDomainMessenger"]
-		ctx.OvmETH = chainConfig.StateDump.Accounts["OVM_ETH"]
-		ctx.OvmL2StandardBridge = chainConfig.StateDump.Accounts["OVM_L2StandardBridge"]
-	}
-
 	evm := &EVM{
 		Context:      ctx,
 		StateDB:      statedb,
@@ -326,33 +237,15 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
-
-	if !UsingOVM {
-		// OVM_DISABLED
-		// Fail if we're trying to transfer more than the available balance
-		if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
-			return nil, gas, ErrInsufficientBalance
-		}
-	}
-
-	// We need to be able to show a status of 1 ("no error") for successful L1 => L2 messages.
-	// The current way we figure out the success of the transaction (by parsing the
-	// returned data) would require an upgrade to the contracts that we likely won't make for a
-	// while. As a result, we'll use this mechanism where we set IsL1ToL2Message = true if
-	// we detect an L1 => L2 message and then IsSuccessfulL1ToL2Message = true if the message is
-	// successfully executed.
-	// Just to be safe (if the evm object ever gets reused), we set both values to false on the
-	// start of a new EVM execution.
-	if evm.depth == 0 {
-		evm.Context.IsL1ToL2Message = false
-		evm.Context.IsSuccessfulL1ToL2Message = false
+	// Fail if we're trying to transfer more than the available balance
+	if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+		return nil, gas, ErrInsufficientBalance
 	}
 
 	var (
 		to       = AccountRef(addr)
 		snapshot = evm.StateDB.Snapshot()
 	)
-
 	if !evm.StateDB.Exist(addr) {
 		precompiles := PrecompiledContractsHomestead
 		if evm.chainRules.IsByzantium {
@@ -371,12 +264,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		}
 		evm.StateDB.CreateAccount(addr)
 	}
-
-	if !UsingOVM {
-		// OVM_DISABLED
-		evm.Transfer(evm.StateDB, caller.Address(), to.Address(), value)
-	}
-
+	evm.Transfer(evm.StateDB, caller.Address(), to.Address(), value)
 	// Initialise a new contract and set the code that is to be used by the EVM.
 	// The contract is a scoped environment for this execution context only.
 	contract := NewContract(caller, to, value, gas)
@@ -393,35 +281,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			evm.vmConfig.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
 		}()
 	}
-
-	// Here's where we detect L1 => L2 messages. Based on the current contracts, we're guaranteed
-	// that the target address will only be the OVM_L2CrossDomainMessenger at a depth of 1 if this
-	// is an L1 => L2 message.
-	if evm.depth == 1 && addr == evm.Context.OvmL2CrossDomainMessenger.Address {
-		evm.Context.IsL1ToL2Message = true
-	}
-
 	ret, err = run(evm, contract, input, false)
-
-	// If all of these very particular conditions hold then we're guaranteed to be in a successful
-	// L1 => L2 message. It's not pretty, but it works. Broke this out into a series of checks to
-	// make it a bit more legible.
-	if evm.Context.IsL1ToL2Message && evm.depth == 3 {
-		var isValidMessageTarget = true
-		// 0x420... addresses are not valid targets except for the ETH predeploy.
-		if bytes.HasPrefix(addr.Bytes(), fortyTwoPrefix) && addr != evm.Context.OvmL2StandardBridge.Address {
-			isValidMessageTarget = false
-		}
-		// 0xdead... addresses are not valid targets.
-		if bytes.HasPrefix(addr.Bytes(), deadPrefix) {
-			isValidMessageTarget = false
-		}
-		// As long as this is a valid target and the message didn't revert then we can consider
-		// this a successful L1 => L2 message.
-		if isValidMessageTarget && err == nil {
-			evm.Context.IsSuccessfulL1ToL2Message = true
-		}
-	}
 
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
@@ -488,7 +348,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			}
 		}
 	}
-
 	return ret, contract.Gas, err
 }
 
@@ -508,12 +367,9 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
-	if !UsingOVM {
-		// OVM_DISABLED
-		// Fail if we're trying to transfer more than the available balance
-		if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
-			return nil, gas, ErrInsufficientBalance
-		}
+	// Fail if we're trying to transfer more than the available balance
+	if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
+		return nil, gas, ErrInsufficientBalance
 	}
 
 	var (
@@ -628,12 +484,11 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, common.Address{}, gas, ErrDepth
 	}
-	if !UsingOVM {
-		// OVM_DISABLED
-		if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
-			return nil, common.Address{}, gas, ErrInsufficientBalance
-		}
+	if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
+		return nil, common.Address{}, gas, ErrInsufficientBalance
 	}
+	nonce := evm.StateDB.GetNonce(caller.Address())
+	evm.StateDB.SetNonce(caller.Address(), nonce+1)
 
 	// Ensure there's no existing contract already at the designated address
 	contractHash := evm.StateDB.GetCodeHash(address)
@@ -646,10 +501,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	if evm.chainRules.IsEIP158 {
 		evm.StateDB.SetNonce(address, 1)
 	}
-	if !UsingOVM {
-		// OVM_DISABLED
-		evm.Transfer(evm.StateDB, caller.Address(), address, value)
-	}
+	evm.Transfer(evm.StateDB, caller.Address(), address, value)
 
 	// Initialise a new contract and set the code that is to be used by the EVM.
 	// The contract is a scoped environment for this execution context only.
@@ -704,23 +556,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 
 // Create creates a new contract using code as deployment code.
 func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
-	if !UsingOVM {
-		// OVM_DISABLED
-		contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
-	} else {
-		// OVM_ENABLED
-		if caller.Address() != evm.Context.OvmExecutionManager.Address {
-			log.Error("Creation called by non-Execution Manager contract! This should never happen.", "Offending address", caller.Address().Hex())
-			return nil, caller.Address(), 0, ErrOvmCreationFailed
-		}
-
-		contractAddr = evm.OvmADDRESS()
-
-		if evm.Context.EthCallSender == nil {
-			log.Debug("[EM] Creating contract.", "New contract address", contractAddr.Hex(), "Caller Addr", caller.Address().Hex(), "Caller nonce", evm.StateDB.GetNonce(caller.Address()))
-		}
-	}
-
+	contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
 	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr)
 }
 
@@ -730,34 +566,9 @@ func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.I
 // instead of the usual sender-and-nonce-hash as the address where the contract is initialized at.
 func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
 	codeAndHash := &codeAndHash{code: code}
-	if !UsingOVM {
-		// OVM_DISABLED
-		contractAddr = crypto.CreateAddress2(caller.Address(), common.BigToHash(salt), codeAndHash.Hash().Bytes())
-	} else {
-		// OVM_ENABLED
-		if caller.Address() != evm.Context.OvmExecutionManager.Address {
-			log.Error("Creation called by non-Execution Manager contract! This should never happen.", "Offending address", caller.Address().Hex())
-			return nil, caller.Address(), 0, ErrOvmCreationFailed
-		}
-
-		contractAddr = evm.OvmADDRESS()
-
-		if evm.Context.EthCallSender == nil {
-			log.Debug("[EM] Creating contract [create2].", "New contract address", contractAddr.Hex(), "Caller Addr", caller.Address().Hex(), "Caller nonce", evm.StateDB.GetNonce(caller.Address()))
-		}
-	}
-
+	contractAddr = crypto.CreateAddress2(caller.Address(), common.BigToHash(salt), codeAndHash.Hash().Bytes())
 	return evm.create(caller, codeAndHash, gas, endowment, contractAddr)
 }
 
 // ChainConfig returns the environment's chain configuration
 func (evm *EVM) ChainConfig() *params.ChainConfig { return evm.chainConfig }
-
-// OvmADDRESS will be set by the execution manager to the target address whenever it's
-// about to create a new contract. This value is currently stored at the [15] storage slot.
-// Can pull this specific storage slot to get the address that the execution manager is
-// trying to create to, and create to it.
-func (evm *EVM) OvmADDRESS() common.Address {
-	slot := common.Hash{31: 0x0f}
-	return common.BytesToAddress(evm.StateDB.GetState(evm.Context.OvmExecutionManager.Address, slot).Bytes())
-}

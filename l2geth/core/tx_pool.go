@@ -29,11 +29,12 @@ import (
 	"github.com/MetisProtocol/l2geth/common/prque"
 	"github.com/MetisProtocol/l2geth/core/state"
 	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/metrics"
 	"github.com/MetisProtocol/l2geth/params"
+	"github.com/MetisProtocol/rollup/rcfg"
+
 )
 
 const (
@@ -561,7 +562,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return ErrUnderpriced
 	}
 	// Ensure the transaction adheres to nonce ordering
-	if vm.UsingOVM {
+	if rcfg.UsingOVM {
 		if pool.currentState.GetNonce(from) != tx.Nonce() {
 			return ErrNonceTooLow
 		}
@@ -602,7 +603,6 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 // whitelisted, preventing any associated transaction from being dropped out of the pool
 // due to pricing constraints.
 func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err error) {
-	log.Debug("received tx", "gas", tx.Gas(), "gasprice", tx.GasPrice().Uint64())
 	// If the transaction is already known, discard it
 	hash := tx.Hash()
 	if pool.all.Get(hash) != nil {

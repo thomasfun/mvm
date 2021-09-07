@@ -37,10 +37,10 @@ import (
 	"github.com/MetisProtocol/l2geth/accounts"
 	"github.com/MetisProtocol/l2geth/common"
 	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/crypto"
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/log"
+	"github.com/MetisProtocol/rollup/rcfg"
 )
 
 var (
@@ -83,7 +83,7 @@ func NewKeyStore(keydir string, scryptN, scryptP int) *KeyStore {
 	keydir, _ = filepath.Abs(keydir)
 	ks := &KeyStore{storage: &keyStorePassphrase{keydir, scryptN, scryptP, false}}
 	ks.init(keydir)
-	if vm.UsingOVM {
+	if rcfg.UsingOVM {
 		// Add a deterministic key to the key store so that
 		// all clique blocks are signed with the same key.
 		// This change will result in deterministic blocks across

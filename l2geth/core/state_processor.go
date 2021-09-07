@@ -19,11 +19,13 @@ package core
 import (
 	"github.com/MetisProtocol/l2geth/common"
 	"github.com/MetisProtocol/l2geth/consensus"
+	"github.com/MetisProtocol/l2geth/consensus/misc"
 	"github.com/MetisProtocol/l2geth/core/state"
 	"github.com/MetisProtocol/l2geth/core/types"
 	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/crypto"
 	"github.com/MetisProtocol/l2geth/params"
+	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 )
 
 // StateProcessor is a basic Processor, which takes care of transitioning
@@ -60,6 +62,10 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 		allLogs  []*types.Log
 		gp       = new(GasPool).AddGas(block.GasLimit())
 	)
+	// Mutate the block and state according to any hard-fork specs
+	if p.config.DAOForkSupport && p.config.DAOForkBlock != nil && p.config.DAOForkBlock.Cmp(block.Number()) == 0 {
+		misc.ApplyDAOHardFork(statedb)
+	}
 	// Iterate over and process the individual transactions
 	for i, tx := range block.Transactions() {
 		statedb.Prepare(tx.Hash(), block.Hash(), i)
@@ -81,35 +87,23 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 // for the transaction, gas used and an error if the transaction failed,
 // indicating the block was invalid.
 func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, error) {
-	var msg Message
-	var err error
-	if !vm.UsingOVM {
-		msg, err = tx.AsMessage(types.MakeSigner(config, header.Number))
+	msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))
+	if rcfg.UsingOVM {
 		if err != nil {
-			return nil, err
+			// This should only be allowed to pass if the transaction is in the ctc
+			// already. The presence of `Index` should specify this.
+			index := tx.GetMeta().Index
+			if index == nil && msg.QueueOrigin() != types.QueueOriginL1ToL2 {
+				return nil, err
+			}
 		}
 	} else {
-		// The transaction must be modified when running the OVM. The
-		// transaction fields that the user signs must be ABI encoded and then
-		// turned into the calldata of the transaction and the `to` field has to
-		// be updated to be the sequencer entrypoint.
-		decompressor := config.StateDump.Accounts["OVM_SequencerEntrypoint"]
-		msg, err = AsOvmMessage(tx, types.MakeSigner(config, header.Number), decompressor.Address, header.GasLimit)
 		if err != nil {
 			return nil, err
 		}
 	}
 	// Create a new context to be used in the EVM environment
 	context := NewEVMContext(msg, header, bc, author)
-	if vm.UsingOVM {
-		// The `NUMBER` opcode returns the L1 blocknumber instead of the L2
-		// blocknumber, so set that here. In the future, this should be
-		// implemented by adding a new property to the EVM struct
-		// `L1BlockNumber` and updating `opNumber` to return that. This
-		// will help with keeping the difference in behavior maintainable over
-		// time
-		context.BlockNumber = msg.L1BlockNumber()
-	}
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
 	vmenv := vm.NewEVM(context, statedb, config, cfg)

@@ -40,22 +40,20 @@ import (
 	"github.com/MetisProtocol/l2geth/core/types"
 	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/crypto"
-	"github.com/MetisProtocol/l2geth/diffdb"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/p2p"
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rlp"
-	"github.com/MetisProtocol/l2geth/rollup/fees"
+	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 	"github.com/MetisProtocol/l2geth/rpc"
 	"github.com/tyler-smith/go-bip39"
 )
 
-const (
-	defaultGasPrice = params.Wei * fees.TxGasPrice
-)
-
 var errOVMUnsupported = errors.New("OVM: Unsupported RPC Method")
-var bigDefaultGasPrice = new(big.Int).SetUint64(defaultGasPrice)
+
+// TEMPORARY: Set the gas price to 0 until message passing and ETH value work again.
+// Otherwise the integration tests won't pass because the accounts have no ETH.
+var bigDefaultGasPrice = new(big.Int).SetUint64(0)
 
 // PublicEthereumAPI provides an API to access Ethereum related information.
 // It offers only methods that operate on public data that is freely available to anyone.
@@ -540,7 +538,7 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address common.Add
 	if state == nil || err != nil {
 		return nil, err
 	}
-	return (*hexutil.Big)(state.GetOVMBalance(address)), state.Error()
+	return (*hexutil.Big)(state.GetBalance(address)), state.Error()
 }
 
 // Result structs for GetProof
@@ -846,7 +844,7 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		log.Warn("Caller gas above allowance, capping", "requested", gas, "cap", globalGasCap)
 		gas = globalGasCap.Uint64()
 	}
-	gasPrice := new(big.Int).SetUint64(defaultGasPrice)
+	gasPrice := new(big.Int)
 	if args.GasPrice != nil {
 		gasPrice = args.GasPrice.ToInt()
 	}
@@ -861,16 +859,12 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		data = []byte(*args.Data)
 	}
 
+	// Currently, the blocknumber and timestamp actually refer to the L1BlockNumber and L1Timestamp
+	// attached to each transaction. We need to modify the blocknumber and timestamp to reflect this,
+	// or else the result of `eth_call` will not be correct.
 	blockNumber := header.Number
-	timestamp := new(big.Int).SetUint64(header.Time)
-
-	// Create new call message
-	var msg core.Message
-	msg = types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, nil, types.QueueOriginSequencer)
-	if vm.UsingOVM {
-		cfg := b.ChainConfig()
-		executionManager := cfg.StateDump.Accounts["OVM_ExecutionManager"]
-		stateManager := cfg.StateDump.Accounts["OVM_StateManager"]
+	timestamp := header.Time
+	if rcfg.UsingOVM {
 		block, err := b.BlockByNumber(ctx, rpc.BlockNumber(header.Number.Uint64()))
 		if err != nil {
 			return nil, 0, false, err
@@ -883,14 +877,13 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 				}
 				tx := txs[0]
 				blockNumber = tx.L1BlockNumber()
-				timestamp = new(big.Int).SetUint64(tx.L1Timestamp())
+				timestamp = tx.L1Timestamp()
 			}
 		}
-		msg, err = core.EncodeSimulatedMessage(msg, timestamp, blockNumber, executionManager, stateManager)
-		if err != nil {
-			return nil, 0, false, err
-		}
 	}
+
+	// Create new call message
+	msg := types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, blockNumber, timestamp, types.QueueOriginSequencer)
 
 	// Setup context so it may be cancelled the call has completed
 	// or, in case of unmetered gas, setup a context with a timeout.
@@ -919,11 +912,6 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 	// Setup the gas pool (also for unmetered requests)
 	// and apply the message.
 	gp := new(core.GasPool).AddGas(math.MaxUint64)
-	if vm.UsingOVM {
-		evm.Context.EthCallSender = &addr
-		evm.Context.BlockNumber = blockNumber
-		evm.Context.Time = timestamp
-	}
 	res, gas, failed, err := core.ApplyMessage(evm, msg, gp)
 	if err := vmError(); err != nil {
 		return nil, 0, false, err
@@ -1096,6 +1084,7 @@ func (s *PublicBlockChainAPI) EstimateExecutionGas(ctx context.Context, args Cal
 	}
 	return estimate, nil
 }
+
 
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
@@ -1653,7 +1642,7 @@ func SubmitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (c
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {
-	if vm.UsingOVM {
+	if rcfg.UsingOVM {
 		return common.Hash{}, errOVMUnsupported
 	}
 	// Look up the wallet containing the requested signer
@@ -1688,7 +1677,7 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 // FillTransaction fills the defaults (nonce, gas, gasPrice) on a given unsigned transaction,
 // and returns it to the caller for further processing (signing + broadcast)
 func (s *PublicTransactionPoolAPI) FillTransaction(ctx context.Context, args SendTxArgs) (*SignTransactionResult, error) {
-	if vm.UsingOVM {
+	if rcfg.UsingOVM {
 		return nil, errOVMUnsupported
 	}
 	// Set some sanity defaults and terminate on failure
@@ -1735,7 +1724,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sign
 func (s *PublicTransactionPoolAPI) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
-	if vm.UsingOVM {
+	if rcfg.UsingOVM {
 		return nil, errOVMUnsupported
 	}
 	// Look up the wallet containing the requested signer
@@ -1763,7 +1752,7 @@ type SignTransactionResult struct {
 // The node needs to have the private key of the account corresponding with
 // the given from address and it needs to be unlocked.
 func (s *PublicTransactionPoolAPI) SignTransaction(ctx context.Context, args SendTxArgs) (*SignTransactionResult, error) {
-	if vm.UsingOVM {
+	if rcfg.UsingOVM {
 		return nil, errOVMUnsupported
 	}
 	if args.Gas == nil {
