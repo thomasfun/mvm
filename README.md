@@ -11,19 +11,49 @@ Extensive documentation is available [here](http://community.optimism.io/docs/).
 
 ## Directory Structure
 
-- [`packages`](./packages): Contains all the typescript packages and contracts
-  - [`contracts`](./packages/contracts): Solidity smart contracts implementing the OVM
-  - [`core-utils`](./packages/core-utils): Low-level utilities and encoding packages
-  - [`common-ts`](./packages/common-ts): Common tools for TypeScript code that runs in Node
-  - [`hardhat-ovm`](./packages/hardhat-ovm): Hardhat plugin which enables the [OVM Compiler](https://github.com/ethereum-optimism/solidity)
-  - [`smock`](./packages/smock): Testing utility for mocking smart contract return values and storage
-  - [`data-transport-layer`](./packages/data-transport-layer): Event indexer, allowing the `l2geth` node to access L1 data
-  - [`batch-submitter`](./packages/batch-submitter): Daemon for submitting L2 transaction and state root batches to L1
-  - [`message-relayer`](./packages/message-relayer): Service for relaying L2 messages to L1
-- [`l2geth`](./l2geth): Fork of [go-ethereum v1.9.10](https://github.com/ethereum/go-ethereum/tree/v1.9.10) implementing the [OVM](https://research.paradigm.xyz/optimism#optimistic-geth).
-- [`integration-tests`](./integration-tests): Integration tests between a L1 testnet, `l2geth`,
-- [`ops`](./ops): Contains Dockerfiles for containerizing each service involved in the protocol,
-  as well as a docker-compose file for bringing up local testnets easily
+* [`packages`](./packages): Contains all the typescript packages and contracts
+  * [`contracts`](./packages/contracts): Solidity smart contracts implementing the OVM
+  * [`core-utils`](./packages/core-utils): Low-level utilities and encoding packages
+  * [`common-ts`](./packages/common-ts): Common tools for TypeScript code that runs in Node
+  * [`hardhat-ovm`](./packages/hardhat-ovm): Hardhat plugin which enables the [OVM Compiler](https://github.com/ethereum-optimism/solidity)
+  * [`smock`](./packages/smock): Testing utility for mocking smart contract return values and storage
+  * [`data-transport-layer`](./packages/data-transport-layer): Event indexer, allowing the `l2geth` node to access L1 data
+  * [`batch-submitter`](./packages/batch-submitter): Daemon for submitting L2 transaction and state root batches to L1
+  * [`message-relayer`](./packages/message-relayer): Service for relaying L2 messages to L1
+* [`l2geth`](./l2geth): Fork of [go-ethereum v1.9.10](https://github.com/ethereum/go-ethereum/tree/v1.9.10) implementing the [OVM](https://research.paradigm.xyz/optimism#optimistic-geth).
+* [`integration-tests`](./integration-tests): Integration tests between a L1 testnet, `l2geth`,
+* [`ops`](./ops): Contains Dockerfiles for containerizing each service involved in the protocol,
+as well as a docker-compose file for bringing up local testnets easily
+
+## Contributing
+
+Read through [CONTRIBUTING.md](./CONTRIBUTING.md) for a general overview of our contribution process.
+Follow the [Development Quick Start](#development-quick-start) to set up your local development environment.
+
+### Good First Issues
+
+You can find good first issues by filtering for the ["good first issue" tag on our issues page](https://github.com/ethereum-optimism/optimism/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) or alternatively by taking a look at our [Good First Issues project board](https://github.com/orgs/ethereum-optimism/projects/23).
+If you'd like to tackle one of these issues, please leave a comment and [assign yourself to the issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/assigning-issues-and-pull-requests-to-other-github-users#assigning-an-individual-issue-or-pull-request).
+This helps prevent two people accidentally working on the same task at the same time.
+
+### Changesets
+
+We use [changesets](https://github.com/atlassian/changesets) to manage releases of our various packages.
+You *must* include a `changeset` file in your PR when making a change that would require a new package release.
+
+Adding a `changeset` file is easy:
+
+1. Navigate to the root of the monorepo.
+2. Run `yarn changeset`. You'll be prompted to select packages to include in the changeset. Use the arrow keys to move the cursor up and down, hit the `spacebar` to select a package, and hit `enter` to confirm your selection. Select *all* packages that require a new release as a result of your PR.
+3. Once you hit `enter` you'll be prompted to decide whether your selected packages need a `major`, `minor`, or `patch` release. We follow the [Semantic Versioning](https://semver.org/) scheme. Please avoid using `major` releases for any packages that are still in version `0.y.z`.
+4. Commit your changeset and push it into your PR. The changeset bot will notice your changeset file and leave a little comment to this effect on GitHub.
+5. Voilà, c'est fini!
+
+### Rebasing
+
+We use the `git rebase` command to keep our commit history tidy.
+Rebasing is an easy way to make sure that each PR includes a series of clean commits with descriptive commit messages
+See [this tutorial](https://docs.gitlab.com/ee/topics/git/git_rebase.html) for a detailed explanation of `git rebase` and how you should use it to maintain a clean commit history.
 
 ## Development Quick Start
 
@@ -72,6 +102,7 @@ docker-compose build
 ```
 
 This will build the following containers:
+
 * [`builder`](https://hub.docker.com/r/ethereumoptimism/builder): used to build the TypeScript packages
 * [`l1_chain`](https://hub.docker.com/r/ethereumoptimism/hardhat): simulated L1 chain using hardhat-evm as a backend
 * [`deployer`](https://hub.docker.com/r/ethereumoptimism/deployer): process that deploys L1 smart contracts to the L1 chain
@@ -125,6 +156,7 @@ docker-compose up
 ```
 
 #### Viewing docker container logs
+
 By default, the `docker-compose up` command will show logs from all services, and that
 can be hard to filter through. In order to view the logs from a specific service, you can run:
 
@@ -161,7 +193,55 @@ yarn build:integration
 yarn test:integration
 ```
 
+## Branching Model and Releases
+
+<!-- TODO: explain about changesets + how we do npm publishing + docker publishing -->
+
+### Active Branches
+
+| Branch          | Status                                                                           |
+| --------------- | -------------------------------------------------------------------------------- |
+| [master](https://github.com/ethereum-optimism/optimism/tree/master/)                   | Accepts PRs from `develop` when we intend to deploy to mainnet.                                      |
+| [develop](https://github.com/ethereum-optimism/optimism/tree/develop/)                 | Accepts PRs that are compatible with `master` OR from `regenesis/X.X.X` branches.                    |
+| regenesis/X.X.X                                                                        | Accepts PRs for all changes, particularly those not backwards compatible with `develop` and `master`. |
+
+### Overview
+
+We generally follow [this Git branching model](https://nvie.com/posts/a-successful-git-branching-model/).
+Please read the linked post if you're planning to make frequent PRs into this repository (e.g., people working at/with Optimism).
+
+### The `master` branch
+
+The `master` branch contains the code for our latest "stable" releases.
+Updates from `master` always come from the `develop` branch.
+We only ever update the `master` branch when we intend to deploy code within the `develop` to the Optimistic Ethereum mainnet.
+Our update process takes the form of a PR merging the `develop` branch into the `master` branch.
+
+### The `develop` branch
+
+Our primary development branch is [`develop`](https://github.com/ethereum-optimism/optimism/tree/develop/).
+`develop` contains the most up-to-date software that remains backwards compatible with our latest experimental [network deployments](https://community.optimism.io/docs/developers/networks.html).
+If you're making a backwards compatible change, please direct your pull request towards `develop`.
+
+**Changes to contracts within `packages/contracts/contracts/optimistic-ethereum` are usually NOT considered backwards compatible and SHOULD be made against a release candidate branch**.
+Some exceptions to this rule exist for cases in which we absolutely must deploy some new contract after a release candidate branch has already been fully deployed.
+If you're changing or adding a contract and you're unsure about which branch to make a PR into, default to using the latest release candidate branch.
+See below for info about release candidate branches.
+
+### Release new versions
+
+Developers can release new versions of the software by adding changesets to their pull requests using `yarn changeset`. Changesets will persist over time on the `develop` branch without triggering new version bumps to be proposed by the Changesets bot. Once changesets are merged into `master`, the bot will create a new pull request called "Version Packages" which bumps the versions of packages. The correct flow for triggering releases is to re-base these pull requests onto `develop` and merge them, and then create a new pull request to merge `develop` onto `master`. Then, the `release` workflow will trigger the actual publishing to `npm` and Docker hub.
+
+### Release candidate branches
+
+Branches marked `regenesis/X.X.X` are **release candidate branches**.
+Changes that are not backwards compatible and all changes to contracts within `packages/contracts/contracts/optimistic-ethereum` MUST be directed towards a release candidate branch.
+Release candidates are merged into `develop` and then into `master` once they've been fully deployed.
+We may sometimes have more than one active `regenesis/X.X.X` branch if we're in the middle of a deployment.
+See table in the **Active Branches** section above to find the right branch to target.
+
 ## Additional Reference Material
+
 ### Running contract static analysis
 
 We perform static analysis with [`slither`](https://github.com/crytic/slither).

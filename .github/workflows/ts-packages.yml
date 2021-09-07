@@ -55,6 +55,7 @@ jobs:
         run: cat packages/contracts/gas-report.txt
 
       - name: Run codechecks
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         working-directory: ./packages/contracts
         run: yarn codechecks
         env:
@@ -133,5 +134,9 @@ jobs:
         # if: steps.yarn-cache.outputs.cache-hit != 'true'
         run: yarn install
 
-      - name: Lint
+      - name: Lint JS and TS
         run: yarn lint:check
+
+      - name: Lint Solidity
+        working-directory: ./packages/contracts
+        run: yarn lint:contracts

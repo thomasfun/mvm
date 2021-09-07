@@ -20,7 +20,7 @@ import {
   AppendSequencerBatchParams,
 } from '../transaction-chain-contract'
 
-import { Range, BatchSubmitter } from '.'
+import { BlockRange, BatchSubmitter } from '.'
 
 export interface AutoFixBatchOptions {
   fixDoublePlayedDeposits: boolean
@@ -173,10 +173,10 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
     return
   }
 
-  public async _getBatchStartAndEnd(): Promise<Range> {
-    //this.logger.info(
-    //  'Getting batch start and end for transaction batch submitter...'
-    //)
+  public async _getBatchStartAndEnd(): Promise<BlockRange> {
+    this.logger.info(
+      'Getting batch start and end for transaction batch submitter...'
+    )
     const startBlock =
       (await this.chainContract.getTotalElementsByChainId(this.l2ChainId)).toNumber() +
       this.blockOffset
@@ -227,10 +227,9 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
       )
       return
     }
-    const [
-      batchParams,
-      wasBatchTruncated,
-    ] = await this._generateSequencerBatchParams(startBlock, endBlock)
+
+    const [batchParams, wasBatchTruncated] =
+      await this._generateSequencerBatchParams(startBlock, endBlock)
     const batchSizeInBytes = encodeAppendSequencerBatch(batchParams).length / 2
     this.logger.debug('Sequencer batch generated', {
       batchSizeInBytes,
@@ -400,6 +399,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
     if(timestamp === 0 && blockNumber === 0) {
       return true
     }
+
     // TODO: Verify queue element hash equality. The queue element hash can be computed with:
     // keccak256( abi.encode( msg.sender, _target, _gasLimit, _data))
 
@@ -464,12 +464,14 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
         while (true) {
           const pendingQueueElements = await this.chainContract.getNumPendingQueueElementsByChainId(this.l2ChainId)
           const nextRemoteQueueElements = await this.chainContract.getNextQueueIndexByChainId(this.l2ChainId)
+
           const totalQueueElements =
             pendingQueueElements + nextRemoteQueueElements
           // No more queue elements so we clearly haven't skipped anything
           if (nextQueueIndex >= totalQueueElements) {
             break
           }
+
           const [
             queueEleHash,
             timestamp,
@@ -478,6 +480,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
 	        this.l2ChainId,
 	        nextQueueIndex
 	      )
+
 
           if (timestamp < ele.timestamp || blockNumber < ele.blockNumber) {
             this.logger.warn('Fixing skipped deposit', {
@@ -513,10 +516,8 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
     const fixMonotonicity = async (b: Batch): Promise<Batch> => {
       this.logger.debug('Fixing monotonicity...')
       // The earliest allowed timestamp/blockNumber is the last timestamp submitted on chain.
-      const {
-        lastTimestamp,
-        lastBlockNumber,
-      } = await this._getLastTimestampAndBlockNumber()
+      const { lastTimestamp, lastBlockNumber } =
+        await this._getLastTimestampAndBlockNumber()
       let earliestTimestamp = lastTimestamp
       let earliestBlockNumber = lastBlockNumber
       this.logger.debug('Determined earliest timestamp and blockNumber', {

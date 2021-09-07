@@ -152,13 +152,12 @@ describe('BatchSubmitter', () => {
   let OVM_StateCommitmentChain: Contract
   let l2Provider: MockchainProvider
   beforeEach(async () => {
-    const unwrapped_OVM_CanonicalTransactionChain = await Factory__OVM_CanonicalTransactionChain.deploy(
-      AddressManager.address,
-      FORCE_INCLUSION_PERIOD_SECONDS,
-      FORCE_INCLUSION_PERIOD_SECONDS,
-      MAX_GAS_LIMIT
-    )
-    //await unwrapped_OVM_CanonicalTransactionChain.init()
+    const unwrapped_OVM_CanonicalTransactionChain =
+      await Factory__OVM_CanonicalTransactionChain.deploy(
+        AddressManager.address,
+        FORCE_INCLUSION_PERIOD_SECONDS
+      )
+    await unwrapped_OVM_CanonicalTransactionChain.init()
 
     await AddressManager.setAddress(
       'OVM_CanonicalTransactionChain',
@@ -171,11 +170,12 @@ describe('BatchSubmitter', () => {
       sequencer
     )
 
-    const unwrapped_OVM_StateCommitmentChain = await Factory__OVM_StateCommitmentChain.deploy(
-      AddressManager.address,
-      0, // fraudProofWindowSeconds
-      0 // sequencerPublishWindowSeconds
-    )
+    const unwrapped_OVM_StateCommitmentChain =
+      await Factory__OVM_StateCommitmentChain.deploy(
+        AddressManager.address,
+        0, // fraudProofWindowSeconds
+        0 // sequencerPublishWindowSeconds
+      )
 
     //await unwrapped_OVM_StateCommitmentChain.init()
 

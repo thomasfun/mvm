@@ -11,16 +11,20 @@ import { Lib_PredeployAddresses } from "../../../libraries/constants/Lib_Predepl
 import { Lib_CrossDomainUtils } from "../../../libraries/bridge/Lib_CrossDomainUtils.sol";
 
 /* Interface Imports */
-import { iOVM_L1CrossDomainMessenger } from "../../../iOVM/bridge/messaging/iOVM_L1CrossDomainMessenger.sol";
-import { iOVM_CanonicalTransactionChain } from "../../../iOVM/chain/iOVM_CanonicalTransactionChain.sol";
+import { iOVM_L1CrossDomainMessenger } from
+    "../../../iOVM/bridge/messaging/iOVM_L1CrossDomainMessenger.sol";
+import { iOVM_CanonicalTransactionChain } from
+    "../../../iOVM/chain/iOVM_CanonicalTransactionChain.sol";
 import { iOVM_StateCommitmentChain } from "../../../iOVM/chain/iOVM_StateCommitmentChain.sol";
 
 /* External Imports */
-import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
- 
-import "hardhat/console.sol";
+import { OwnableUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import { PausableUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import { ReentrancyGuardUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+
 /**
  * @title OVM_L1CrossDomainMessenger
  * @dev The L1 Cross Domain Messenger contract sends messages from L1 to L2, and relays messages
@@ -195,7 +199,8 @@ contract OVM_L1CrossDomainMessenger is
     {
         address ovmCanonicalTransactionChain = resolve("OVM_CanonicalTransactionChain");
         // Use the CTC queue length as nonce
-        uint40 nonce = iOVM_CanonicalTransactionChain(ovmCanonicalTransactionChain).getQueueLength();
+        uint40 nonce =
+            iOVM_CanonicalTransactionChain(ovmCanonicalTransactionChain).getQueueLength();
 
         bytes memory xDomainCalldata = Lib_CrossDomainUtils.encodeXDomainCalldata(
             _target,
@@ -205,7 +210,12 @@ contract OVM_L1CrossDomainMessenger is
         );
 
         address l2CrossDomainMessenger = resolve("OVM_L2CrossDomainMessenger");
-        _sendXDomainMessage(ovmCanonicalTransactionChain, l2CrossDomainMessenger, xDomainCalldata, _gasLimit);
+        _sendXDomainMessage(
+            ovmCanonicalTransactionChain,
+            l2CrossDomainMessenger,
+            xDomainCalldata,
+            _gasLimit
+        );
         emit SentMessage(xDomainCalldata);
     }
 
@@ -248,7 +258,7 @@ contract OVM_L1CrossDomainMessenger is
         _sendXDomainMessageViaChainId(_chainId, xDomainCalldataRaw, _gasLimit);
         emit SentMessage(xDomainCalldataRaw);
     }
-    
+
 
     /**
      * Relays a cross domain message to a contract.
@@ -294,6 +304,11 @@ contract OVM_L1CrossDomainMessenger is
             "Provided message has been blocked."
         );
 
+        require(
+            _target != resolve("OVM_CanonicalTransactionChain"),
+            "Cannot send L2->L1 messages to L1 system contracts."
+        );
+
         xDomainMsgSender = _sender;
         (bool success, ) = _target.call(_message);
         xDomainMsgSender = DEFAULT_XDOMAIN_SENDER;
@@ -335,7 +350,8 @@ contract OVM_L1CrossDomainMessenger is
     {
         // Verify that the message is in the queue:
         address canonicalTransactionChain = resolve("OVM_CanonicalTransactionChain");
-        Lib_OVMCodec.QueueElement memory element = iOVM_CanonicalTransactionChain(canonicalTransactionChain).getQueueElement(_queueIndex);
+        Lib_OVMCodec.QueueElement memory element =
+            iOVM_CanonicalTransactionChain(canonicalTransactionChain).getQueueElement(_queueIndex);
 
         address l2CrossDomainMessenger = resolve("OVM_L2CrossDomainMessenger");
         // Compute the transactionHash
@@ -360,7 +376,12 @@ contract OVM_L1CrossDomainMessenger is
             _queueIndex
         );
 
-        _sendXDomainMessage(canonicalTransactionChain, l2CrossDomainMessenger, xDomainCalldata, _gasLimit);
+        _sendXDomainMessage(
+            canonicalTransactionChain,
+            l2CrossDomainMessenger,
+            xDomainCalldata,
+            _gasLimit
+        );
     }
     function toAscii(bytes1 p) public returns (bytes1) {
         uint8 a=uint8(p&0x0f);
@@ -377,7 +398,7 @@ contract OVM_L1CrossDomainMessenger is
         }
         return names;
     }
-        
+
     /**
      * Relays a cross domain message to a contract.
      * @inheritdoc iOVM_L1CrossDomainMessenger
@@ -422,7 +443,7 @@ contract OVM_L1CrossDomainMessenger is
             blockedMessages[xDomainCalldataHash] == false,
             "Provided message has been blocked."
         );
-	
+
         xDomainMsgSender = _sender;
         (bool success, ) = _target.call(_message);
         xDomainMsgSender = DEFAULT_XDOMAIN_SENDER;
@@ -725,7 +746,7 @@ contract OVM_L1CrossDomainMessenger is
             account.storageRoot
         );
     }
-    
+
     /**
      * Sends a cross domain message via chain id.
      * @param _chainId L2 chain id.
@@ -747,5 +768,5 @@ contract OVM_L1CrossDomainMessenger is
         );
     }
 
-    
+
 }
