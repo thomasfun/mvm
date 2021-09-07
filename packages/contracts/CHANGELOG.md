@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.4
+
+### Patch Changes
+
+- 063151a6: Run lint over the tasks directory
+
+## 0.4.3
+
+### Patch Changes
+
+- 694cf429: Add a hardhat task for setting the L2 gas price
+
 ## 0.4.2
 
 ### Patch Changes
