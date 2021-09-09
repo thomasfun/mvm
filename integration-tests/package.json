@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@metis.io/contracts": "^1.1.*",
+    "@metis.io/hardhat-mvm": "^0.2.5",
     "@eth-optimism/core-utils": "^0.5.2",
     "@eth-optimism/message-relayer": "^0.1.11",
     "@ethersproject/providers": "^5.4.4",

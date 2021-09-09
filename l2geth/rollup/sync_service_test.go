@@ -22,7 +22,7 @@ import (
 	"github.com/MetisProtocol/l2geth/ethdb"
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/rollup/fees"
+	"github.com/MetisProtocol/l2geth/rollup/fees"
 )
 
 func setupLatestEthContextTest() (*SyncService, *EthContext) {

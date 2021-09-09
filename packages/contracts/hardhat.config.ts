@@ -10,8 +10,10 @@ import {
 // Hardhat plugins
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
+import '@nomiclabs/hardhat-etherscan'
 import 'hardhat-deploy'
 import '@typechain/hardhat'
+import '@eth-optimism/hardhat-ovm'
 import './tasks/deploy'
 import './tasks/l2-gasprice'
 import './tasks/set-owner'
@@ -23,6 +25,8 @@ import 'hardhat-gas-reporter'
 dotenv.config()
 
 const enableGasReport = !!process.env.ENABLE_GAS_REPORT
+const privateKey = process.env.PRIVATE_KEY ||
+  "0x0000000000000000000000000000000000000000000000000000000000000000"; // this is to avoid hardhat error
 
 const config: HardhatUserConfig = {
   networks: {
@@ -36,7 +40,22 @@ const config: HardhatUserConfig = {
     },
     optimism: {
       url: 'http://127.0.0.1:8545',
+      ovm: true,
       saveDeployments: false,
+    },
+    'optimism-kovan': {
+      chainId: 69,
+      url: 'https://kovan.optimism.io',
+      accounts: [privateKey],
+      gasPrice: 15000000,
+      ovm: true,
+    },
+    'optimism-mainnet': {
+      chainId: 10,
+      url: 'https://mainnet.optimism.io',
+      accounts: [privateKey],
+      gasPrice: 15000000,
+      ovm: true,
     },
   },
   mocha: {
@@ -56,6 +75,9 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  ovm: {
+    solcVersion: '0.7.6+commit.3b061308',
+  },
   typechain: {
     outDir: 'dist/types',
     target: 'ethers-v5',
@@ -74,6 +96,9 @@ const config: HardhatUserConfig = {
     currency: 'USD',
     gasPrice: 100,
     outputFile: process.env.CI ? 'gas-report.txt' : undefined,
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
 }
 
