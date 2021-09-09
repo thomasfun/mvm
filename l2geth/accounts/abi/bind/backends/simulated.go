@@ -608,6 +608,11 @@ func (m callmsg) L1BlockNumber() *big.Int          { return m.CallMsg.L1BlockNum
 func (m callmsg) L1MessageSender() *common.Address { return m.CallMsg.L1MessageSender }
 func (m callmsg) QueueOrigin() types.QueueOrigin   { return m.CallMsg.QueueOrigin }
 
+// NOTE 20210724
+// func (m callmsg) L1Timestamp() uint64 { return m.CallMsg.L1Timestamp }
+// func (m callmsg) Index() *uint64      { return m.CallMsg.Index }
+// func (m callmsg) QueueIndex() *uint64 { return m.CallMsg.QueueIndex }
+
 // filterBackend implements filters.Backend to support filtering for logs without
 // taking bloom-bits acceleration structures into account.
 type filterBackend struct {
