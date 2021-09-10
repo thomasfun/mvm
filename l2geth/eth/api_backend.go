@@ -37,7 +37,7 @@ import (
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/rollup/rcfg"
+	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 	"github.com/MetisProtocol/l2geth/rpc"
 )
 

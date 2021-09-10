@@ -27,7 +27,7 @@ import (
 	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/rollup/rcfg"
+	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 )
 
 var (
@@ -81,8 +81,6 @@ type Message interface {
 	L1BlockNumber() *big.Int
 	L1MessageSender() *common.Address
 	QueueOrigin() types.QueueOrigin
-	QueueOrigin() *big.Int
-	SignatureHashType() types.SignatureHashType
 
 	// NOTE 20210724
 	// L1Timestamp() uint64
@@ -209,6 +207,20 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	if err = st.preCheck(); err != nil {
 		return
 	}
+
+	if vm.UsingOVM {
+		// When the execution is not an `eth_call`, abi encode the user transaction
+		// and place it in the calldata of the msg struct so that the user
+		// transaction can be passed to the system contracts via the calldata
+		if st.evm.EthCallSender == nil {
+			st.msg, err = toExecutionManagerRun(st.evm, st.msg)
+		}
+		st.data = st.msg.Data()
+		if err != nil {
+			return nil, 0, false, err
+		}
+	}
+
 	msg := st.msg
 	sender := vm.AccountRef(msg.From())
 	homestead := st.evm.ChainConfig().IsHomestead(st.evm.BlockNumber)
@@ -232,6 +244,20 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		vmerr error
 	)
 
+	if vm.UsingOVM {
+		to := "<nil>"
+		if msg.To() != nil {
+			to = msg.To().Hex()
+		}
+		l1MessageSender := "<nil>"
+		if msg.L1MessageSender() != nil {
+			l1MessageSender = msg.L1MessageSender().Hex()
+		}
+		if st.evm.EthCallSender == nil {
+			log.Debug("Applying transaction", "from", sender.Address().Hex(), "to", to, "nonce", msg.Nonce(), "gasPrice", msg.GasPrice().Uint64(), "gasLimit", msg.Gas(), "value", msg.Value().Uint64(), "l1MessageSender", l1MessageSender, "data", hexutil.Encode(msg.Data()))
+		}
+	}
+
 	if contractCreation {
 		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
 	} else {
@@ -250,8 +276,10 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		}
 	}
 	st.refundGas()
-	st.state.AddBalance(evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
-
+	if !vm.UsingOVM {
+		// Do not pay the gas to the coinbase address when running the OVM
+		st.state.AddBalance(evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
+	}
 	return ret, st.gasUsed(), vmerr != nil, err
 }
 

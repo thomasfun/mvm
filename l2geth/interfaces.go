@@ -124,10 +124,6 @@ type CallMsg struct {
 	L1BlockNumber   *big.Int
 	L1MessageSender *common.Address
 	QueueOrigin     types.QueueOrigin
-	L1MessageSender   *common.Address
-	L1BlockNumber     *big.Int
-	QueueOrigin       *big.Int
-	SignatureHashType types.SignatureHashType
 
 	// NOTE 20210724
 	// L1Timestamp uint64

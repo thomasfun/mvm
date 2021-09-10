@@ -36,7 +36,6 @@ import (
 	"github.com/MetisProtocol/l2geth/core/state"
 	"github.com/MetisProtocol/l2geth/core/types"
 	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/diffdb"
 	"github.com/MetisProtocol/l2geth/ethdb"
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/log"
@@ -44,7 +43,6 @@ import (
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rlp"
 	"github.com/MetisProtocol/l2geth/trie"
-	"github.com/ethereum/go-ethereum/metrics"
 	lru "github.com/hashicorp/golang-lru"
 
 )
@@ -1704,7 +1702,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 			parent = bc.GetHeader(block.ParentHash(), block.NumberU64()-1)
 		}
 
-		statedb, err := state.NewWithDiffDb(parent.Root, bc.stateCache, bc.diffdb)
+		statedb, err := state.New(parent.Root, bc.stateCache)
 		// NOTE 20210724
 		log.Debug("Test: NewWithDiffDb", err)
 		if err != nil {
@@ -1717,7 +1715,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 		if !bc.cacheConfig.TrieCleanNoPrefetch {
 			if followup, err := it.peek(); followup != nil && err == nil {
 				go func(start time.Time) {
-					throwaway, _ := state.NewWithDiffDb(parent.Root, bc.stateCache, bc.diffdb)
+					throwaway, _ := state.New(parent.Root, bc.stateCache)
 					bc.prefetcher.Prefetch(followup, throwaway, bc.vmConfig, &followupInterrupt)
 
 					blockPrefetchExecuteTimer.Update(time.Since(start))

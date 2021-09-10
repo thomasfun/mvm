@@ -40,7 +40,7 @@ import (
 	"github.com/MetisProtocol/l2geth/crypto"
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/log"
-	"github.com/MetisProtocol/rollup/rcfg"
+	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 )
 
 var (

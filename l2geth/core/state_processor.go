@@ -28,7 +28,6 @@ import (
 	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/crypto"
 	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 )
 
 // StateProcessor is a basic Processor, which takes care of transitioning
@@ -92,18 +91,19 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 // for the transaction, gas used and an error if the transaction failed,
 // indicating the block was invalid.
 func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, error) {
-	msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))
-	if rcfg.UsingOVM {
+	var msg Message
+	var err error
+	if !vm.UsingOVM {
 		if err != nil {
 			// This should only be allowed to pass if the transaction is in the ctc
 			// already. The presence of `Index` should specify this.
+			msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))
 			index := tx.GetMeta().Index
 			if index == nil && msg.QueueOrigin() != types.QueueOriginL1ToL2 {
 				return nil, err
 			}
 		}
 	} else {
-
 		fmt.Println("Test: AsOvmMessage", "l1Timestamp", tx.GetMeta().L1Timestamp, "index", tx.GetMeta().Index)
 		decompressor := config.StateDump.Accounts["OVM_SequencerEntrypoint"]
 		msg, err = AsOvmMessage(tx, types.MakeSigner(config, header.Number), decompressor.Address, header.GasLimit)

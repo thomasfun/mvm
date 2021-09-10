@@ -29,11 +29,12 @@ import (
 	"github.com/MetisProtocol/l2geth/common/prque"
 	"github.com/MetisProtocol/l2geth/core/state"
 	"github.com/MetisProtocol/l2geth/core/types"
+	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/metrics"
 	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/rollup/rcfg"
+	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 
 )
 

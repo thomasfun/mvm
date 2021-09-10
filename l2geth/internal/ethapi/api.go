@@ -43,6 +43,7 @@ import (
 	"github.com/MetisProtocol/l2geth/p2p"
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rlp"
+	"github.com/MetisProtocol/l2geth/rollup/fees"
 	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 	"github.com/MetisProtocol/l2geth/rpc"
 	"github.com/davecgh/go-spew/spew"
@@ -863,7 +864,7 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 	// attached to each transaction. We need to modify the blocknumber and timestamp to reflect this,
 	// or else the result of `eth_call` will not be correct.
 	blockNumber := header.Number
-	timestamp := header.Time
+	timestamp :=  new(big.Int).SetUint64(header.Time)
 	if rcfg.UsingOVM {
 		block, err := b.BlockByNumber(ctx, rpc.BlockNumber(header.Number.Uint64()))
 		if err != nil {
@@ -877,7 +878,7 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 				}
 				tx := txs[0]
 				blockNumber = tx.L1BlockNumber()
-				timestamp = tx.L1Timestamp()
+				timestamp = new(big.Int).SetUint64(tx.L1Timestamp())
 
 				// NOTE 20210724
 				// msg = types.NewMessage2(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, nil, types.QueueOriginSequencer, 0, tx.L1Timestamp(), tx.GetMeta().Index, tx.GetMeta().QueueIndex)
@@ -886,7 +887,7 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 	}
 
 	// Create new call message
-	msg := types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, blockNumber, timestamp, types.QueueOriginSequencer)
+	msg := types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, blockNumber, types.QueueOriginSequencer)
 
 	// Setup context so it may be cancelled the call has completed
 	// or, in case of unmetered gas, setup a context with a timeout.
@@ -912,9 +913,15 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		evm.Cancel()
 	}()
 
+
 	// Setup the gas pool (also for unmetered requests)
 	// and apply the message.
 	gp := new(core.GasPool).AddGas(math.MaxUint64)
+	if vm.UsingOVM {
+		evm.Context.EthCallSender = &addr
+		evm.Context.BlockNumber = blockNumber
+		evm.Context.Time = timestamp
+	}
 	res, gas, failed, err := core.ApplyMessage(evm, msg, gp)
 	if err := vmError(); err != nil {
 		return nil, 0, false, err
