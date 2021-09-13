@@ -2,7 +2,7 @@
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 
 /* Imports: Internal */
-import { registerAddress,registerAddressToMvm } from '../src/hardhat-deploy-ethers'
+import { registerAddress } from '../src/hardhat-deploy-ethers'
 import { predeploys } from '../src/predeploys'
 
 const deployFn: DeployFunction = async (hre) => {
@@ -23,6 +23,12 @@ const deployFn: DeployFunction = async (hre) => {
 
   await registerAddress({
     hre,
+    name: 'OVM_DecompressionPrecompileAddress',
+    address: predeploys.OVM_SequencerEntrypoint,
+  })
+
+  await registerAddress({
+    hre,
     name: 'OVM_Sequencer',
     address: (hre as any).deployConfig.ovmSequencerAddress,
   })
@@ -38,25 +44,6 @@ const deployFn: DeployFunction = async (hre) => {
     name: 'OVM_L2BatchMessageRelayer',
     address: (hre as any).deployConfig.ovmRelayerAddress,
   })
-
-  const result =  await deploy('MVM_AddressManager', {
-    from: deployer,
-    args: [],
-    log: true,
-  })
-
-  await registerAddress({
-    hre,
-    name: 'MVM_AddressManager',
-    address: result.address,
-  })
-
-  await registerAddressToMvm({
-    hre,
-    name: '429_MVM_Sequencer',
-    address: (hre as any).deployConfig.ovmSequencerAddress,
-  })
-
 }
 
 deployFn.tags = ['Lib_AddressManager', 'required']

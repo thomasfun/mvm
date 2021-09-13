@@ -6,13 +6,15 @@ pragma experimental ABIEncoderV2;
 /* Library Imports */
 import { Lib_OVMCodec } from "../../libraries/codec/Lib_OVMCodec.sol";
 import { Lib_AddressResolver } from "../../libraries/resolver/Lib_AddressResolver.sol";
-import { MVM_AddressResolver } from "../../libraries/resolver/MVM_AddressResolver.sol";
 import { Lib_MerkleTree } from "../../libraries/utils/Lib_MerkleTree.sol";
 
 /* Interface Imports */
 import { iOVM_CanonicalTransactionChain } from
     "../../iOVM/chain/iOVM_CanonicalTransactionChain.sol";
 import { iOVM_ChainStorageContainer } from "../../iOVM/chain/iOVM_ChainStorageContainer.sol";
+
+/* Contract Imports */
+import { OVM_ExecutionManager } from "../execution/OVM_ExecutionManager.sol";
 
 /* External Imports */
 import { Math } from "@openzeppelin/contracts/math/Math.sol";
@@ -29,7 +31,7 @@ import { Math } from "@openzeppelin/contracts/math/Math.sol";
  *
  * Runtime target: EVM
  */
-contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_AddressResolver, MVM_AddressResolver {
+contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_AddressResolver {
 
     /*************
      * Constants *
@@ -65,13 +67,11 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
      ***************/
 
     constructor(
-        address _mvmAddressManager,
         address _libAddressManager,
         uint256 _forceInclusionPeriodSeconds,
         uint256 _forceInclusionPeriodBlocks,
         uint256 _maxTransactionGasLimit
     )
-        MVM_AddressResolver(_mvmAddressManager)
         Lib_AddressResolver(_libAddressManager)
     {
         forceInclusionPeriodSeconds = _forceInclusionPeriodSeconds;
@@ -1153,6 +1153,9 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             bool
         )
     {
+        OVM_ExecutionManager ovmExecutionManager =
+            OVM_ExecutionManager(resolve("OVM_ExecutionManager"));
+        uint256 gasLimit = ovmExecutionManager.getMaxTransactionGasLimit();
         bytes32 leafHash = _getSequencerLeafHash(_txChainElement);
 
         require(
@@ -1168,7 +1171,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             _transaction.blockNumber        == _txChainElement.blockNumber
             && _transaction.timestamp       == _txChainElement.timestamp
             && _transaction.entrypoint      == address(0)
-            && _transaction.gasLimit        == maxTransactionGasLimit
+            && _transaction.gasLimit        == gasLimit
             && _transaction.l1TxOrigin      == address(0)
             && _transaction.l1QueueOrigin   == Lib_OVMCodec.QueueOrigin.SEQUENCER_QUEUE
             && keccak256(_transaction.data) == keccak256(_txChainElement.txData),
@@ -1817,9 +1820,9 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             shouldStartAtElement == getTotalElementsByChainId(_chainId),
             "Actual batch start index does not match expected start index."
         );
-        string memory ch=makeChainSeq(_chainId);
+        string memory ch = makeChainSeq(_chainId);
         require(
-            msg.sender == resolveFromMvm(ch),
+            msg.sender == resolve("OVM_Sequencer"),
             "Function can only be called by the Sequencer."
         );
 
@@ -2562,6 +2565,9 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             bool
         )
     {
+        OVM_ExecutionManager ovmExecutionManager =
+            OVM_ExecutionManager(resolve("OVM_ExecutionManager"));
+        uint256 gasLimit = ovmExecutionManager.getMaxTransactionGasLimit();
         bytes32 leafHash = _getSequencerLeafHashByChainId(_chainId,_txChainElement);
 
         require(
@@ -2578,6 +2584,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             _transaction.blockNumber        == _txChainElement.blockNumber
             && _transaction.timestamp       == _txChainElement.timestamp
             && _transaction.entrypoint      == resolve("OVM_DecompressionPrecompileAddress")
+                && _transaction.gasLimit        == gasLimit
             && _transaction.l1TxOrigin      == address(0)
             && _transaction.l1QueueOrigin   == Lib_OVMCodec.QueueOrigin.SEQUENCER_QUEUE
             && keccak256(_transaction.data) == keccak256(_txChainElement.txData),

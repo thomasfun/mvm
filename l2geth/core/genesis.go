@@ -549,6 +549,21 @@ func DeveloperGenesisBlock(period uint64, faucet, l1XDomainMessengerAddress comm
 		if !ok {
 			panic("Lib_AddressManager not in state dump")
 		}
+		if !ok {
+			panic("Lib_AddressManager not in state dump")
+		}
+		_, ok = stateDump.Accounts["OVM_StateManager"]
+		if !ok {
+			panic("OVM_StateManager not in state dump")
+		}
+		_, ok = stateDump.Accounts["OVM_ExecutionManager"]
+		if !ok {
+			panic("OVM_ExecutionManager not in state dump")
+		}
+		_, ok = stateDump.Accounts["OVM_SequencerEntrypoint"]
+		if !ok {
+			panic("OVM_SequencerEntrypoint not in state dump")
+		}
 	}
 	config.StateDump = &stateDump
 

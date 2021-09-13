@@ -3,10 +3,11 @@ import { expect } from '../../../setup'
 /* Imports: External */
 import hre from 'hardhat'
 import { MockContract, smockit } from '@eth-optimism/smock'
-import { Contract, Signer } from 'ethers'
+import { Contract, Signer, constants } from 'ethers'
 
 /* Imports: Internal */
 import { predeploys } from '../../../../src'
+import { getContractFactory } from '@nomiclabs/hardhat-ethers/types'
 
 describe('OVM_SequencerFeeVault', () => {
   let signer1: Signer
@@ -23,6 +24,7 @@ describe('OVM_SequencerFeeVault', () => {
     Mock__OVM_L2StandardBridge = await smockit('OVM_L2StandardBridge', {
       address: predeploys.OVM_L2StandardBridge,
     })
+    console.log(await Mock__OVM_L2StandardBridge.getAddress)
   })
 
   let OVM_SequencerFeeVault: Contract

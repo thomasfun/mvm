@@ -99,17 +99,45 @@ export const makeStateDump = async (cfg: RollupDeployConfig): Promise<any> => {
 
   let config: RollupDeployConfig = {
     deploymentSigner: signer,
+    ovmGasMeteringConfig: {
+      minTransactionGasLimit: 0,
+      maxTransactionGasLimit: 11_000_000,
+      maxGasPerQueuePerEpoch: 1_000_000_000_000,
+      secondsPerEpoch: 0,
+    },
+    ovmGlobalContext: {
+      ovmCHAINID: 420,
+      L2CrossDomainMessengerAddress: predeploys.OVM_L2CrossDomainMessenger,
+    },
+    transactionChainConfig: {
+      sequencer: signer,
+      forceInclusionPeriodSeconds: 600,
+      forceInclusionPeriodBlocks: 600 / 12,
+    },
+    stateChainConfig: {
+      fraudProofWindowSeconds: 600,
+      sequencerPublishWindowSeconds: 60_000,
+    },
     whitelistConfig: {
       owner: signer,
       allowArbitraryContractDeployment: true,
     },
+    l1CrossDomainMessengerConfig: {},
     dependencies: [
+      'ERC1820Registry',
       'Lib_AddressManager',
       'OVM_DeployerWhitelist',
       'OVM_L1MessageSender',
       'OVM_L2ToL1MessagePasser',
+      'OVM_ProxyEOA',
+      'OVM_ECDSAContractAccount',
+      'OVM_SequencerEntrypoint',
       'OVM_L2CrossDomainMessenger',
+      'OVM_SafetyChecker',
+      'OVM_ExecutionManager',
+      'OVM_StateManager',
       'OVM_ETH',
+      'OVM_ExecutionManagerWrapper',
       'OVM_GasPriceOracle',
       'OVM_SequencerFeeVault',
       'OVM_L2StandardBridge',
@@ -123,6 +151,21 @@ export const makeStateDump = async (cfg: RollupDeployConfig): Promise<any> => {
   }
 
   config = { ...config, ...cfg }
+
+  const ovmCompiled = [
+    'OVM_L2ToL1MessagePasser',
+    'OVM_L2CrossDomainMessenger',
+    'OVM_SequencerEntrypoint',
+    'Lib_AddressManager',
+    'OVM_DeployerWhitelist',
+    'OVM_ETH',
+    'OVM_ECDSAContractAccount',
+    'OVM_ProxyEOA',
+    'OVM_ExecutionManagerWrapper',
+    'OVM_GasPriceOracle',
+    'OVM_SequencerFeeVault',
+    'OVM_L2StandardBridge',
+  ]
 
   const deploymentResult = await deploy(config)
   deploymentResult.contracts['Lib_AddressManager'] =
@@ -144,16 +187,37 @@ export const makeStateDump = async (cfg: RollupDeployConfig): Promise<any> => {
   for (let i = 0; i < Object.keys(deploymentResult.contracts).length; i++) {
     const name = Object.keys(deploymentResult.contracts)[i]
     const contract = deploymentResult.contracts[name]
-    const codeBuf = await pStateManager.getContractCode(
-      fromHexString(contract.address)
-    )
-    const code = toHexString(codeBuf)
+    let code: string
+    if (ovmCompiled.includes(name)) {
+      const ovmDeployedBytecode = getContractDefinition(
+        name,
+        true
+      ).deployedBytecode
+      // TODO remove: deployedBytecode is missing the find and replace in solidity
+      code = ovmDeployedBytecode
+        .split(
+          '336000905af158601d01573d60011458600c01573d6000803e3d621234565260ea61109c52'
+        )
+        .join(
+          '336000905af158600e01573d6000803e3d6000fd5b3d6001141558600a015760016000f35b'
+        )
+    } else {
+      const codeBuf = await pStateManager.getContractCode(
+        fromHexString(contract.address)
+      )
+      code = toHexString(codeBuf)
+    }
 
     const deadAddress =
       predeploys[name] ||
       `0xdeaddeaddeaddeaddeaddeaddeaddeaddead${i.toString(16).padStart(4, '0')}`
 
-    const def = getContractDefinition(name.replace('Proxy__', ''))
+    let def: any
+    try {
+      def = getContractDefinition(name.replace('Proxy__', ''))
+    } catch (err) {
+      def = getContractDefinition(name.replace('Proxy__', ''), true)
+    }
 
     dump.accounts[name] = {
       address: deadAddress,
@@ -176,6 +240,14 @@ export const makeStateDump = async (cfg: RollupDeployConfig): Promise<any> => {
       dump.accounts[name].storage,
       addressMap
     )
+  }
+
+  dump.accounts['OVM_GasMetadata'] = {
+    address: '0x06a506a506a506a506a506a506a506a506a506a5',
+    code: '0x00',
+    codeHash: keccak256('0x00'),
+    storage: {},
+    abi: [],
   }
 
   return dump

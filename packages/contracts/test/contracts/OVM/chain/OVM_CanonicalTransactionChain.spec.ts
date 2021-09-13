@@ -95,12 +95,21 @@ describe('OVM_CanonicalTransactionChain', () => {
   })
 
   let AddressManager: Contract
+  let Mock__OVM_ExecutionManager: MockContract
   let Mock__OVM_StateCommitmentChain: MockContract
   before(async () => {
     AddressManager = await makeAddressManager()
     await AddressManager.setAddress(
       'OVM_Sequencer',
       await sequencer.getAddress()
+    )
+    await AddressManager.setAddress(
+      'OVM_DecompressionPrecompileAddress',
+      predeploys.OVM_SequencerEntrypoint
+    )
+
+    Mock__OVM_ExecutionManager = await smockit(
+      await ethers.getContractFactory('OVM_ExecutionManager')
     )
 
     Mock__OVM_StateCommitmentChain = await smockit(
@@ -109,8 +118,18 @@ describe('OVM_CanonicalTransactionChain', () => {
 
     await setProxyTarget(
       AddressManager,
+      'OVM_ExecutionManager',
+      Mock__OVM_ExecutionManager
+    )
+
+    await setProxyTarget(
+      AddressManager,
       'OVM_StateCommitmentChain',
       Mock__OVM_StateCommitmentChain
+    )
+
+    Mock__OVM_ExecutionManager.smocked.getMaxTransactionGasLimit.will.return.with(
+      MAX_GAS_LIMIT
     )
   })
 
@@ -589,7 +608,7 @@ describe('OVM_CanonicalTransactionChain', () => {
     })
 
     it('should successfully verify against a valid sequencer transaction', async () => {
-      const entrypoint = ethers.constants.AddressZero
+      const entrypoint = predeploys.OVM_SequencerEntrypoint
       const gasLimit = MAX_GAS_LIMIT
       const data = '0x' + '12'.repeat(1234)
       const timestamp = (await getEthTime(ethers.provider)) - 10

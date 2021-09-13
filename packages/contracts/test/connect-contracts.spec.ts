@@ -11,6 +11,9 @@ describe('connectL1Contracts', () => {
   const l1ContractNames = [
     'addressManager',
     'canonicalTransactionChain',
+    'executionManager',
+    'fraudVerifier',
+    'multiMessageRelayer',
     'stateCommitmentChain',
     'xDomainMessengerProxy',
     'bondManager',
@@ -22,6 +25,9 @@ describe('connectL1Contracts', () => {
     'messagePasser',
     'messageSender',
     'deployerWhiteList',
+    'ecdsaContractAccount',
+    'sequencerEntrypoint',
+    'erc1820Registry',
     'addressManager',
   ]
 

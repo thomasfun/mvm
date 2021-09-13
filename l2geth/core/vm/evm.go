@@ -254,6 +254,16 @@ type EVM struct {
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
 func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
+	// Add the ExecutionManager and StateManager to the Context here to
+	// prevent the need to update function signatures across the codebase.
+	if chainConfig != nil && chainConfig.StateDump != nil {
+		ctx.OvmExecutionManager = chainConfig.StateDump.Accounts["OVM_ExecutionManager"]
+		ctx.OvmStateManager = chainConfig.StateDump.Accounts["OVM_StateManager"]
+		ctx.OvmSafetyChecker = chainConfig.StateDump.Accounts["OVM_SafetyChecker"]
+		ctx.OvmL2CrossDomainMessenger = chainConfig.StateDump.Accounts["OVM_L2CrossDomainMessenger"]
+		ctx.OvmETH = chainConfig.StateDump.Accounts["OVM_ETH"]
+		ctx.OvmL2StandardBridge = chainConfig.StateDump.Accounts["OVM_L2StandardBridge"]
+	}
 	evm := &EVM{
 		Context:      ctx,
 		StateDB:      statedb,
