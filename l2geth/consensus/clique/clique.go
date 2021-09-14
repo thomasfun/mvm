@@ -34,12 +34,12 @@ import (
 	"github.com/MetisProtocol/l2geth/consensus/misc"
 	"github.com/MetisProtocol/l2geth/core/state"
 	"github.com/MetisProtocol/l2geth/core/types"
+	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/crypto"
 	"github.com/MetisProtocol/l2geth/ethdb"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rlp"
-	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 	"github.com/MetisProtocol/l2geth/rpc"
 	lru "github.com/hashicorp/golang-lru"
 	"golang.org/x/crypto/sha3"
@@ -252,7 +252,7 @@ func (c *Clique) verifyHeader(chain consensus.ChainReader, header *types.Header,
 	}
 	number := header.Number.Uint64()
 
-	if !rcfg.UsingOVM {
+	if vm.UsingOVM {
 		// Don't waste time checking blocks from the future
 		// NOTE 20210724
 		fmt.Println("verifyHeader in clique, [headerTime, time.Now, allowedFutureBlockTime, expect]", header.Time, time.Now(), allowedFutureBlockTime, uint64(time.Now().Add(allowedFutureBlockTime).Unix()))
@@ -333,11 +333,10 @@ func (c *Clique) verifyCascadingFields(chain consensus.ChainReader, header *type
 	// Do not account for timestamps in consensus when running the OVM
 	// changes. The timestamp must be montonic, meaning that it can be the same
 	// or increase. L1 dictates the timestamp.
-	if !rcfg.UsingOVM {
-		if parent.Time+c.config.Period > header.Time {
+	if !vm.UsingOVM {
+		if parent.Time + c.config.Period > header.Time {
 			return ErrInvalidTimestamp
 		}
-
 	}
 	// Retrieve the snapshot needed to verify this header and cache it
 	snap, err := c.snapshot(chain, number-1, header.ParentHash, parents)
@@ -560,7 +559,7 @@ func (c *Clique) Prepare(chain consensus.ChainReader, header *types.Header) erro
 	}
 
 	// Do not manipulate the timestamps when running with the OVM
-	if !rcfg.UsingOVM {
+	if !vm.UsingOVM {
 		header.Time = parent.Time + c.config.Period
 		if header.Time < uint64(time.Now().Unix()) {
 			header.Time = uint64(time.Now().Unix())
@@ -648,7 +647,7 @@ func (c *Clique) Seal(chain consensus.ChainReader, block *types.Block, results c
 	// Set the delay to 0 when using the OVM so that blocks are always
 	// produced instantly. When running in a non-OVM network, the delay prevents
 	// the creation of invalid blocks.
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		delay = 0
 	}
 	// Sign all the things!

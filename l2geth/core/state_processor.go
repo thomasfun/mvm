@@ -118,6 +118,15 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
 	fmt.Println("Test: ApplyTransaction tx", string(meta_json), string(data_json))
 	// Create a new context to be used in the EVM environment
 	context := NewEVMContext(msg, header, bc, author)
+	if vm.UsingOVM {
+		// The `NUMBER` opcode returns the L1 blocknumber instead of the L2
+		// blocknumber, so set that here. In the future, this should be
+		// implemented by adding a new property to the EVM struct
+		// `L1BlockNumber` and updating `opNumber` to return that. This
+		// will help with keeping the difference in behavior maintainable over
+		// time
+		context.BlockNumber = msg.L1BlockNumber()
+	}
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
 	vmenv := vm.NewEVM(context, statedb, config, cfg)

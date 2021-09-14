@@ -27,7 +27,6 @@ import (
 	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 )
 
 var (
@@ -168,8 +167,14 @@ func (st *StateTransition) useGas(amount uint64) error {
 
 func (st *StateTransition) buyGas() error {
 	mgval := new(big.Int).Mul(new(big.Int).SetUint64(st.msg.Gas()), st.gasPrice)
-	if st.state.GetBalance(st.msg.From()).Cmp(mgval) < 0 {
-		return errInsufficientBalanceForGas
+	// There is no native ETH, there is OVM_ETH which is an ERC20.
+	// Sufficient user balance is checked when the user sends the transaction
+	// via RPC through very similar checks as to when a transaction enters
+	// the layer one mempool. Deposits skip the check
+	if !vm.UsingOVM {
+		if st.state.GetBalance(st.msg.From()).Cmp(mgval) < 0 {
+			return errInsufficientBalanceForGas
+		}
 	}
 	if err := st.gp.SubGas(st.msg.Gas()); err != nil {
 		return err
@@ -177,7 +182,11 @@ func (st *StateTransition) buyGas() error {
 	st.gas += st.msg.Gas()
 
 	st.initialGas = st.msg.Gas()
-	st.state.SubBalance(st.msg.From(), mgval)
+	// Do not subtract the gas from the user balance when running OVM.
+	// This is handled in the Solidity contracts to enable to fraud proof
+	if !vm.UsingOVM {
+		st.state.SubBalance(st.msg.From(), mgval)
+	}
 	return nil
 }
 
@@ -186,8 +195,10 @@ func (st *StateTransition) preCheck() error {
 	if st.msg.CheckNonce() {
 		nonce := st.state.GetNonce(st.msg.From())
 		if nonce < st.msg.Nonce() {
-			if rcfg.UsingOVM {
-				// The nonce never increments for L1ToL2 txs
+			// Skip the nonce check for L1 to L2 transactions. They do not
+			// increment a nonce in the state and they also ecrecover to
+			// `address(0)`
+			if vm.UsingOVM {
 				if st.msg.QueueOrigin() == types.QueueOriginL1ToL2 {
 					return st.buyGas()
 				}
@@ -199,7 +210,6 @@ func (st *StateTransition) preCheck() error {
 	}
 	return st.buyGas()
 }
-
 // TransitionDb will transition the state by applying the current message and
 // returning the result including the used gas. It returns an error if failed.
 // An error indicates a consensus issue.
@@ -262,7 +272,12 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
 	} else {
 		// Increment the nonce for the next transaction
-		st.state.SetNonce(msg.From(), st.state.GetNonce(msg.From())+1)
+		if !vm.UsingOVM {
+			// Do not set the nonce because that is handled in the Solidity
+			// contracts.
+			st.state.SetNonce(msg.From(), st.state.GetNonce(msg.From())+1)
+		}
+
 		ret, st.gas, vmerr = evm.Call(sender, st.to(), st.data, st.gas, st.value)
 	}
 
@@ -284,6 +299,10 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 }
 
 func (st *StateTransition) refundGas() {
+	// Do not refund any gas when running the OVM
+	if vm.UsingOVM {
+		return
+	}
 	// Apply refund counter, capped to half of the used gas.
 	refund := st.gasUsed() / 2
 	if refund > st.state.GetRefund() {

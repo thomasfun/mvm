@@ -34,8 +34,6 @@ import (
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/metrics"
 	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rollup/rcfg"
-
 )
 
 const (
@@ -563,7 +561,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return ErrUnderpriced
 	}
 	// Ensure the transaction adheres to nonce ordering
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		if pool.currentState.GetNonce(from) != tx.Nonce() {
 			return ErrNonceTooLow
 		}

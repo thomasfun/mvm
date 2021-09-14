@@ -23,7 +23,6 @@ import (
 	"github.com/MetisProtocol/l2geth/consensus"
 	"github.com/MetisProtocol/l2geth/core/types"
 	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 )
 
 // DefaultL1MessageSender is the default L1MessageSender value attached to a transaction that is
@@ -49,43 +48,17 @@ func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author
 	} else {
 		beneficiary = *author
 	}
-	if rcfg.UsingOVM {
-		// When using the OVM, we must:
-		// (1) Attach the L1MessageSender context value and
-		// (2) Set the BlockNumber to be the msg.L1BlockNumber
-		// (3) Set the Time to be the msg.L1Timestamp
-		var l1MessageSender common.Address
-		if msg.L1MessageSender() == nil {
-			l1MessageSender = DefaultL1MessageSender
-		} else {
-			l1MessageSender = *msg.L1MessageSender()
-		}
-		return vm.Context{
-			CanTransfer:     CanTransfer,
-			Transfer:        Transfer,
-			GetHash:         GetHashFn(header, chain),
-			Origin:          msg.From(),
-			Coinbase:        beneficiary,
-			BlockNumber:     msg.L1BlockNumber(),
-			Time:            new(big.Int).SetUint64(msg.L1Timestamp()),
-			Difficulty:      new(big.Int).Set(header.Difficulty),
-			GasLimit:        header.GasLimit,
-			GasPrice:        new(big.Int).Set(msg.GasPrice()),
-			L1MessageSender: l1MessageSender,
-		}
-	} else {
-		return vm.Context{
-			CanTransfer: CanTransfer,
-			Transfer:    Transfer,
-			GetHash:     GetHashFn(header, chain),
-			Origin:      msg.From(),
-			Coinbase:    beneficiary,
-			BlockNumber: new(big.Int).Set(header.Number),
-			Time:        new(big.Int).SetUint64(header.Time),
-			Difficulty:  new(big.Int).Set(header.Difficulty),
-			GasLimit:    header.GasLimit,
-			GasPrice:    new(big.Int).Set(msg.GasPrice()),
-		}
+	return vm.Context{
+		CanTransfer: CanTransfer,
+		Transfer:    Transfer,
+		GetHash:     GetHashFn(header, chain),
+		Origin:      msg.From(),
+		Coinbase:    beneficiary,
+		BlockNumber: new(big.Int).Set(header.Number),
+		Time:        new(big.Int).SetUint64(header.Time),
+		Difficulty:  new(big.Int).Set(header.Difficulty),
+		GasLimit:    header.GasLimit,
+		GasPrice:    new(big.Int).Set(msg.GasPrice()),
 	}
 }
 

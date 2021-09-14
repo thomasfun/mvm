@@ -35,13 +35,13 @@ import (
 	"github.com/MetisProtocol/l2geth/core/rawdb"
 	"github.com/MetisProtocol/l2geth/core/state"
 	"github.com/MetisProtocol/l2geth/core/types"
+	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/crypto"
 	"github.com/MetisProtocol/l2geth/ethdb"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rlp"
 	"github.com/MetisProtocol/l2geth/rollup/dump"
-	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 )
 
 //go:generate gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
@@ -387,7 +387,7 @@ func (g *Genesis) ToBlock(db ethdb.Database) *types.Block {
 
 	// Apply the OVM genesis state, including setting storage dynamically
 	// in particular system contracts.
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		ApplyOvmStateToState(statedb, g.Config.StateDump, g.L1CrossDomainMessengerAddress, g.L1StandardBridgeAddress, g.AddressManagerOwnerAddress, g.GasPriceOracleOwnerAddress, g.L1FeeWalletAddress, g.ChainID, g.GasLimit)
 	}
 
@@ -531,7 +531,7 @@ func DeveloperGenesisBlock(period uint64, faucet, l1XDomainMessengerAddress comm
 	}
 
 	stateDump := dump.OvmDump{}
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		// Fetch the state dump from the state dump path
 		// The system cannot start without a state dump as it depends on
 		// the ABIs that are included in the state dump. Check that all

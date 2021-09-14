@@ -44,7 +44,6 @@ import (
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rlp"
 	"github.com/MetisProtocol/l2geth/rollup/fees"
-	"github.com/MetisProtocol/l2geth/rollup/rcfg"
 	"github.com/MetisProtocol/l2geth/rpc"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/tyler-smith/go-bip39"
@@ -865,7 +864,7 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 	// or else the result of `eth_call` will not be correct.
 	blockNumber := header.Number
 	timestamp :=  new(big.Int).SetUint64(header.Time)
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		block, err := b.BlockByNumber(ctx, rpc.BlockNumber(header.Number.Uint64()))
 		if err != nil {
 			return nil, 0, false, err
@@ -1676,7 +1675,7 @@ func SubmitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (c
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		return common.Hash{}, errOVMUnsupported
 	}
 	// Look up the wallet containing the requested signer
@@ -1711,7 +1710,7 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 // FillTransaction fills the defaults (nonce, gas, gasPrice) on a given unsigned transaction,
 // and returns it to the caller for further processing (signing + broadcast)
 func (s *PublicTransactionPoolAPI) FillTransaction(ctx context.Context, args SendTxArgs) (*SignTransactionResult, error) {
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		return nil, errOVMUnsupported
 	}
 	// Set some sanity defaults and terminate on failure
@@ -1758,7 +1757,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sign
 func (s *PublicTransactionPoolAPI) Sign(addr common.Address, data hexutil.Bytes) (hexutil.Bytes, error) {
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		return nil, errOVMUnsupported
 	}
 	// Look up the wallet containing the requested signer
@@ -1786,7 +1785,7 @@ type SignTransactionResult struct {
 // The node needs to have the private key of the account corresponding with
 // the given from address and it needs to be unlocked.
 func (s *PublicTransactionPoolAPI) SignTransaction(ctx context.Context, args SendTxArgs) (*SignTransactionResult, error) {
-	if rcfg.UsingOVM {
+	if vm.UsingOVM {
 		return nil, errOVMUnsupported
 	}
 	if args.Gas == nil {
