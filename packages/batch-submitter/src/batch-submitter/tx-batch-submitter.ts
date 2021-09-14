@@ -2,7 +2,8 @@
 import { Promise as bPromise } from 'bluebird'
 import { Signer, ethers, Contract, providers } from 'ethers'
 import { TransactionReceipt } from '@ethersproject/abstract-provider'
-import { getContractInterface, getContractFactory } from '@metis.io/contracts'
+import { getContractInterface, getContractFactory } from 'old-contracts'
+import { getContractInterface as getNewContractInterface} from '@metis.io/contracts'
 import {
   L2Block,
   RollupInfo,
@@ -608,7 +609,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
   }> {
     const manager = new Contract(
       this.addressManagerAddress,
-      getContractInterface('Lib_AddressManager'),
+      getNewContractInterface('Lib_AddressManager'),
       this.signer.provider
     )
 
@@ -617,7 +618,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
     )
     const container = new Contract(
       addr,
-      getContractInterface('iOVM_ChainStorageContainer'),
+      getNewContractInterface('iOVM_ChainStorageContainer'),
       this.signer.provider
     )
 

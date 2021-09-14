@@ -22,6 +22,7 @@
     "build:mainnet": "yarn run build:contracts && yarn run build:typescript && yarn run build:copy && CHAIN_ID=10 yarn run build:dump && yarn run build:typechain",
     "build:typescript": "tsc -p ./tsconfig.build.json",
     "build:contracts": "hardhat compile --show-stack-traces",
+    "build:contracts:ovm": "hardhat compile --network optimism",
     "build:dump": "ts-node \"bin/take-dump.ts\"",
     "build:typechain": "hardhat typechain",
     "test": "yarn run test:contracts",

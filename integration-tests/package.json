@@ -9,12 +9,13 @@
     "lint": "yarn lint:fix && yarn lint:check",
     "lint:fix": "yarn lint:check --fix",
     "lint:check": "eslint .",
-    "build:integration": "yarn build:contracts",
+    "build:integration": "./scripts/build.sh",
     "build:contracts": "hardhat compile",
+    "build:contracts:ovm": "hardhat compile --network optimism",
     "test:integration": "hardhat --network optimism test",
     "test:integration:live": "IS_LIVE_NETWORK=true hardhat --network optimism test",
     "test:sync": "hardhat --network optimism test sync-tests/*.spec.ts --no-compile",
-    "clean": "rimraf cache artifacts",
+    "clean": "rimraf cache artifacts artifacts-ovm cache-ovm",
     "test:l1l2": "hardhat --network optimism test test/demo.spec.ts"
   },
   "devDependencies": {

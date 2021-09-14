@@ -2,7 +2,7 @@
 import { Promise as bPromise } from 'bluebird'
 import { Contract, Signer, providers } from 'ethers'
 import { TransactionReceipt } from '@ethersproject/abstract-provider'
-import { getContractFactory } from '@metis.io/contracts'
+import { getContractFactory } from 'old-contracts'
 import {
   L2Block,
   RollupInfo,
