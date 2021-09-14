@@ -26,6 +26,7 @@ import { predeploys } from '../../../../src'
 // this is probably cleaner for now. Particularly since we're planning to move all of this out into
 // core-utils soon anyway.
 const MAX_GAS_LIMIT = 8_000_000
+const L2_CHAINID = 420
 
 const appendSequencerBatch = async (
   OVM_CanonicalTransactionChain: Contract,
@@ -153,6 +154,7 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
         (transactionTemplate.slice(2).length / 2) * 16 * numTxs
 
       const res = await appendSequencerBatch(OVM_CanonicalTransactionChain, {
+        chainId: L2_CHAINID,
         shouldStartAtElement: 0,
         totalElementsToAppend: numTxs,
         contexts: [
@@ -193,6 +195,7 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
         (transactionTemplate.slice(2).length / 2) * 16 * numTxs
 
       const res = await appendSequencerBatch(OVM_CanonicalTransactionChain, {
+        chainId: L2_CHAINID,
         shouldStartAtElement: 0,
         totalElementsToAppend: numTxs,
         contexts: [...Array(numTxs)].map(() => {
