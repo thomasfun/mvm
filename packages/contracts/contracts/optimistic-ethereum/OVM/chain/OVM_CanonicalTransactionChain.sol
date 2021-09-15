@@ -6,6 +6,7 @@ pragma experimental ABIEncoderV2;
 /* Library Imports */
 import { Lib_OVMCodec } from "../../libraries/codec/Lib_OVMCodec.sol";
 import { Lib_AddressResolver } from "../../libraries/resolver/Lib_AddressResolver.sol";
+import { MVM_AddressResolver } from "../../libraries/resolver/MVM_AddressResolver.sol";
 import { Lib_MerkleTree } from "../../libraries/utils/Lib_MerkleTree.sol";
 
 /* Interface Imports */
@@ -31,7 +32,7 @@ import { Math } from "@openzeppelin/contracts/math/Math.sol";
  *
  * Runtime target: EVM
  */
-contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_AddressResolver {
+contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_AddressResolver, MVM_AddressResolver {
 
     /*************
      * Constants *
@@ -67,11 +68,13 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
      ***************/
 
     constructor(
+        address _mvmAddressManager,
         address _libAddressManager,
         uint256 _forceInclusionPeriodSeconds,
         uint256 _forceInclusionPeriodBlocks,
         uint256 _maxTransactionGasLimit
     )
+        MVM_AddressResolver(_mvmAddressManager)
         Lib_AddressResolver(_libAddressManager)
     {
         forceInclusionPeriodSeconds = _forceInclusionPeriodSeconds;
@@ -1822,7 +1825,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
         );
         string memory ch = makeChainSeq(_chainId);
         require(
-            msg.sender == resolve("OVM_Sequencer"),
+            msg.sender == resolveFromMvm(ch),
             "Function can only be called by the Sequencer."
         );
 

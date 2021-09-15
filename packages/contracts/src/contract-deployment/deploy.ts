@@ -37,7 +37,7 @@ export const deploy = async (
     if (config.waitForReceipts) {
       await AddressManager.deployTransaction.wait()
     }
-    console.log("deployed address manager:"+AddressManager.address);
+    console.log('deployed address manager:' + AddressManager.address)
   }
 
   const contractDeployConfig = await makeContractDeployConfig(
@@ -57,33 +57,36 @@ export const deploy = async (
       continue
     }
 
-    const addr = await AddressManager.getAddress(name);
-    console.log(name + ":" + addr);
-    const fac = contractDeployParameters.factory.connect(config.deploymentSigner)
-    if (addr === "0x0000000000000000000000000000000000000000") {
+    const addr = await AddressManager.getAddress(name)
+    console.log(name + ':' + addr)
+    const fac = contractDeployParameters.factory.connect(
+      config.deploymentSigner
+    )
+    if (addr === '0x0000000000000000000000000000000000000000') {
       try {
         contracts[name] = await fac
           .connect(config.deploymentSigner)
-          .deploy(
-            ...(contractDeployParameters.params || [])
-          )
+          .deploy(...(contractDeployParameters.params || []))
         if (config.waitForReceipts) {
           await contracts[name].deployTransaction.wait()
         }
-        const res = await AddressManager.setAddress(name, contracts[name].address)
+        const res = await AddressManager.setAddress(
+          name,
+          contracts[name].address
+        )
         if (config.waitForReceipts) {
           await res.wait()
         }
-        console.log("deployed "+name+" contract.");
+        console.log('deployed ' + name + ' contract.')
       } catch (err) {
         console.error(`Error deploying ${name}: ${err}`)
         failedDeployments.push(name)
       }
-    } else{
-        const d=fac.attach(addr);
-        contracts[name] = d;
+    } else {
+      const d = fac.attach(addr)
+      contracts[name] = d
     }
-    console.log(name + ":" + contracts[name].address);
+    console.log(name + ':' + contracts[name].address)
   }
 
   for (const [name, contractDeployParameters] of Object.entries(

@@ -9,7 +9,6 @@ export interface BatchContext {
 }
 
 export interface AppendSequencerBatchParams {
-  chainId: number // 5 bytes -- chainId
   shouldStartAtElement: number // 5 bytes -- starts at batch
   totalElementsToAppend: number // 3 bytes -- total_elements_to_append
   contexts: BatchContext[] // total_elements[fixed_size[]]
@@ -21,7 +20,6 @@ const APPEND_SEQUENCER_BATCH_METHOD_ID = 'appendSequencerBatch()'
 export const encodeAppendSequencerBatch = (
   b: AppendSequencerBatchParams
 ): string => {
-  const chainId = encodeHex(b.chainId, 10)
   const encodeShouldStartAtElement = encodeHex(b.shouldStartAtElement, 10)
   const encodedTotalElementsToAppend = encodeHex(b.totalElementsToAppend, 6)
 
@@ -40,7 +38,6 @@ export const encodeAppendSequencerBatch = (
     return acc + encodedTxDataHeader + remove0x(cur)
   }, '')
   return (
-    chainId +
     encodeShouldStartAtElement +
     encodedTotalElementsToAppend +
     encodedContexts +
@@ -62,7 +59,6 @@ export const decodeAppendSequencerBatch = (
 ): AppendSequencerBatchParams => {
   b = remove0x(b)
 
-  const chainId = b.slice(0, 10)
   const shouldStartAtElement = b.slice(0, 10)
   const totalElementsToAppend = b.slice(10, 16)
   const contextHeader = b.slice(16, 22)
@@ -102,7 +98,6 @@ export const decodeAppendSequencerBatch = (
   }
 
   return {
-    chainId: parseInt(chainId, 16),
     shouldStartAtElement: parseInt(shouldStartAtElement, 16),
     totalElementsToAppend: parseInt(totalElementsToAppend, 16),
     contexts,

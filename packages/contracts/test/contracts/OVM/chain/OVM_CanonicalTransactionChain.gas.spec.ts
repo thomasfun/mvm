@@ -13,6 +13,7 @@ import _ from 'lodash'
 /* Internal Imports */
 import {
   makeAddressManager,
+  makeMVMAddressManager,
   setProxyTarget,
   FORCE_INCLUSION_PERIOD_SECONDS,
   FORCE_INCLUSION_PERIOD_BLOCKS,
@@ -26,7 +27,6 @@ import { predeploys } from '../../../../src'
 // this is probably cleaner for now. Particularly since we're planning to move all of this out into
 // core-utils soon anyway.
 const MAX_GAS_LIMIT = 8_000_000
-const L2_CHAINID = 420
 
 const appendSequencerBatch = async (
   OVM_CanonicalTransactionChain: Contract,
@@ -47,6 +47,7 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
   })
 
   let AddressManager: Contract
+  let MVMAddressManager: Contract
   let Mock__OVM_ExecutionManager: MockContract
   let Mock__OVM_StateCommitmentChain: MockContract
   before(async () => {
@@ -59,6 +60,8 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
       'OVM_DecompressionPrecompileAddress',
       predeploys.OVM_SequencerEntrypoint
     )
+
+    MVMAddressManager = await makeMVMAddressManager()
 
     Mock__OVM_ExecutionManager = await smockit(
       await ethers.getContractFactory('OVM_ExecutionManager')
@@ -101,6 +104,7 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
   beforeEach(async () => {
     OVM_CanonicalTransactionChain =
       await Factory__OVM_CanonicalTransactionChain.deploy(
+        MVMAddressManager.address,
         AddressManager.address,
         FORCE_INCLUSION_PERIOD_SECONDS,
         FORCE_INCLUSION_PERIOD_BLOCKS,
@@ -154,7 +158,6 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
         (transactionTemplate.slice(2).length / 2) * 16 * numTxs
 
       const res = await appendSequencerBatch(OVM_CanonicalTransactionChain, {
-        chainId: L2_CHAINID,
         shouldStartAtElement: 0,
         totalElementsToAppend: numTxs,
         contexts: [
@@ -195,7 +198,6 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
         (transactionTemplate.slice(2).length / 2) * 16 * numTxs
 
       const res = await appendSequencerBatch(OVM_CanonicalTransactionChain, {
-        chainId: L2_CHAINID,
         shouldStartAtElement: 0,
         totalElementsToAppend: numTxs,
         contexts: [...Array(numTxs)].map(() => {

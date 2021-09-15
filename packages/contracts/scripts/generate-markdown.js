@@ -17,17 +17,17 @@ const networks = {
   42: 'kovan',
 }
 
-  ; (async () => {
-    console.log(`Writing contract addresses`)
+;(async () => {
+  console.log(`Writing contract addresses`)
 
-    const deployments = dirtree(`./deployments`)
-      .children.filter((child) => {
-        return child.type === 'directory'
-      })
-      .map((d) => d.name)
-      .reverse()
+  const deployments = dirtree(`./deployments`)
+    .children.filter((child) => {
+      return child.type === 'directory'
+    })
+    .map((d) => d.name)
+    .reverse()
 
-    let md = `# Optimism Regenesis Deployments
+  let md = `# Optimism Regenesis Deployments
 ## LAYER 2
 
 ### Chain IDs:
@@ -48,71 +48,71 @@ const networks = {
 
 ## LAYER 1\n\n`
 
-    for (const deployment of deployments) {
-      md += `## ${deployment.toUpperCase()}\n\n`
+  for (const deployment of deployments) {
+    md += `## ${deployment.toUpperCase()}\n\n`
 
-      const chainId = Number(
-        fs.readFileSync(`./deployments/${deployment}/.chainId`)
-      )
-      const network = networks[chainId]
+    const chainId = Number(
+      fs.readFileSync(`./deployments/${deployment}/.chainId`)
+    )
+    const network = networks[chainId]
 
-      md += `Network : __${network} (chain id: ${chainId})__\n\n`
+    md += `Network : __${network} (chain id: ${chainId})__\n\n`
 
-      md += `|Contract|Address|\n`
-      md += `|--|--|\n`
+    md += `|Contract|Address|\n`
+    md += `|--|--|\n`
 
-      const contracts = dirtree(`./deployments/${deployment}`)
-        .children.filter((child) => {
-          return child.extension === '.json'
-        })
-        .map((child) => {
-          return child.name.replace('.json', '')
-        })
+    const contracts = dirtree(`./deployments/${deployment}`)
+      .children.filter((child) => {
+        return child.extension === '.json'
+      })
+      .map((child) => {
+        return child.name.replace('.json', '')
+      })
 
-      proxiedContracts = []
-      for (let i = 0; i < contracts.length; i++) {
-        if (contracts[i] === 'OVM_L1CrossDomainMessenger') {
-          proxiedContracts.push(contracts.splice(i, 1)[0])
-        }
-        if (contracts[i] === 'OVM_L1ETHGateway') {
-          proxiedContracts.push(contracts.splice(i, 1)[0])
-        }
+    proxiedContracts = []
+    for (let i = 0; i < contracts.length; i++) {
+      if (contracts[i] === 'OVM_L1CrossDomainMessenger') {
+        proxiedContracts.push(contracts.splice(i, 1)[0])
       }
-
-      for (const contract of contracts) {
-        const colonizedName = contract.split(':').join('-')
-
-        const deploymentInfo = require(`../deployments/${deployment}/${contract}.json`)
-
-        const escPrefix = chainId !== 1 ? `${network}.` : ''
-        const etherscanUrl = `https://${escPrefix}etherscan.io/address/${deploymentInfo.address}`
-        md += `|${colonizedName}|[${deploymentInfo.address}](${etherscanUrl})|\n`
+      if (contracts[i] === 'OVM_L1ETHGateway') {
+        proxiedContracts.push(contracts.splice(i, 1)[0])
       }
-      proxiedContracts = []
-      for (let i = 0; i < contracts.length; i++) {
-        if (contracts[i] === 'OVM_L1CrossDomainMessenger') {
-          proxiedContracts.push(contracts.splice(i, 1)[0])
-        }
-        if (contracts[i] === 'OVM_L1ETHGateway') {
-          proxiedContracts.push(contracts.splice(i, 1)[0])
-        }
-      }
-
-      md += `<!--\nImplementation addresses. DO NOT use these addresses directly.\nUse their proxied counterparts seen above.\n\n`
-
-      for (const proxy of proxiedContracts) {
-        const colonizedName = proxy.split(':').join('-')
-
-        const deploymentInfo = require(`../deployments/${deployment}/${proxy}.json`)
-
-        const escPrefix = chainId !== 1 ? `${network}.` : ''
-        const etherscanUrl = `https://${escPrefix}etherscan.io/address/${deploymentInfo.address}`
-        md += `${colonizedName}: \n - ${deploymentInfo.address}\n - ${etherscanUrl})\n`
-      }
-
-      md += `-->\n`
-      md += `---\n`
     }
 
-    fs.writeFileSync(`./deployments/README.md`, md)
-  })().catch(console.error)
+    for (const contract of contracts) {
+      const colonizedName = contract.split(':').join('-')
+
+      const deploymentInfo = require(`../deployments/${deployment}/${contract}.json`)
+
+      const escPrefix = chainId !== 1 ? `${network}.` : ''
+      const etherscanUrl = `https://${escPrefix}etherscan.io/address/${deploymentInfo.address}`
+      md += `|${colonizedName}|[${deploymentInfo.address}](${etherscanUrl})|\n`
+    }
+    proxiedContracts = []
+    for (let i = 0; i < contracts.length; i++) {
+      if (contracts[i] === 'OVM_L1CrossDomainMessenger') {
+        proxiedContracts.push(contracts.splice(i, 1)[0])
+      }
+      if (contracts[i] === 'OVM_L1ETHGateway') {
+        proxiedContracts.push(contracts.splice(i, 1)[0])
+      }
+    }
+
+    md += `<!--\nImplementation addresses. DO NOT use these addresses directly.\nUse their proxied counterparts seen above.\n\n`
+
+    for (const proxy of proxiedContracts) {
+      const colonizedName = proxy.split(':').join('-')
+
+      const deploymentInfo = require(`../deployments/${deployment}/${proxy}.json`)
+
+      const escPrefix = chainId !== 1 ? `${network}.` : ''
+      const etherscanUrl = `https://${escPrefix}etherscan.io/address/${deploymentInfo.address}`
+      md += `${colonizedName}: \n - ${deploymentInfo.address}\n - ${etherscanUrl})\n`
+    }
+
+    md += `-->\n`
+    md += `---\n`
+  }
+
+  fs.writeFileSync(`./deployments/README.md`, md)
+})().catch(console.error)

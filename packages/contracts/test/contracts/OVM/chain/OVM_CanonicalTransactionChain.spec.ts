@@ -16,6 +16,7 @@ import _ from 'lodash'
 /* Internal Imports */
 import {
   makeAddressManager,
+  makeMVMAddressManager,
   setProxyTarget,
   FORCE_INCLUSION_PERIOD_SECONDS,
   FORCE_INCLUSION_PERIOD_BLOCKS,
@@ -31,7 +32,7 @@ import { predeploys } from '../../../../src'
 
 const ELEMENT_TEST_SIZES = [1, 2, 4, 8, 16]
 const MAX_GAS_LIMIT = 8_000_000
-const L2_CHAINID = 420
+const L2_CHAIN_ID = 420
 
 const getQueueLeafHash = (index: number): string => {
   return keccak256(
@@ -81,7 +82,6 @@ const appendSequencerBatch = async (
   batch: AppendSequencerBatchParams
 ): Promise<TransactionResponse> => {
   const methodId = keccak256(Buffer.from('appendSequencerBatch()')).slice(2, 10)
-  // const methodId = keccak256(Buffer.from('appendSequencerBatchesByChainId()')).slice(2, 10)
 
   const calldata = encodeAppendSequencerBatch(batch)
   return OVM_CanonicalTransactionChain.signer.sendTransaction({
@@ -98,6 +98,7 @@ describe('OVM_CanonicalTransactionChain', () => {
   })
 
   let AddressManager: Contract
+  let MVM_AddressManager: Contract
   let Mock__OVM_ExecutionManager: MockContract
   let Mock__OVM_StateCommitmentChain: MockContract
   before(async () => {
@@ -110,6 +111,8 @@ describe('OVM_CanonicalTransactionChain', () => {
       'OVM_DecompressionPrecompileAddress',
       predeploys.OVM_SequencerEntrypoint
     )
+
+    MVM_AddressManager = await makeMVMAddressManager()
 
     Mock__OVM_ExecutionManager = await smockit(
       await ethers.getContractFactory('OVM_ExecutionManager')
@@ -152,6 +155,7 @@ describe('OVM_CanonicalTransactionChain', () => {
   beforeEach(async () => {
     OVM_CanonicalTransactionChain =
       await Factory__OVM_CanonicalTransactionChain.deploy(
+        MVM_AddressManager.address,
         AddressManager.address,
         FORCE_INCLUSION_PERIOD_SECONDS,
         FORCE_INCLUSION_PERIOD_BLOCKS,
@@ -193,7 +197,7 @@ describe('OVM_CanonicalTransactionChain', () => {
       const data = '0x' + '12'.repeat(MAX_ROLLUP_TX_SIZE + 1)
 
       await expect(
-        OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, target, gasLimit, data, {
+        OVM_CanonicalTransactionChain.enqueue(target, gasLimit, data, {
           gasLimit: 40000000,
         })
       ).to.be.revertedWith(
@@ -205,7 +209,7 @@ describe('OVM_CanonicalTransactionChain', () => {
       const data = '0x1234567890'
 
       await expect(
-        OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, target, MAX_GAS_LIMIT + 1, data)
+        OVM_CanonicalTransactionChain.enqueue(target, MAX_GAS_LIMIT + 1, data)
       ).to.be.revertedWith(
         'Transaction gas limit exceeds maximum for rollup transaction.'
       )
@@ -218,7 +222,7 @@ describe('OVM_CanonicalTransactionChain', () => {
       const data = '0x' + '12'.repeat(1234)
 
       await expect(
-        OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, target, customGasLimit, data)
+        OVM_CanonicalTransactionChain.enqueue(target, customGasLimit, data)
       ).to.be.revertedWith('Transaction gas limit too low to enqueue.')
     })
 
@@ -228,7 +232,7 @@ describe('OVM_CanonicalTransactionChain', () => {
       const data = '0x' + '12'.repeat(1234)
 
       await expect(
-        OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, target, gasLimit, data, {
+        OVM_CanonicalTransactionChain.enqueue(target, gasLimit, data, {
           gasLimit: gasLimit / L2_GAS_DISCOUNT_DIVISOR + 30_000, // offset constant overhead
         })
       ).to.be.revertedWith('Insufficient gas for L2 rate limiting burn.')
@@ -242,7 +246,7 @@ describe('OVM_CanonicalTransactionChain', () => {
         await setEthTime(ethers.provider, timestamp)
 
         await expect(
-          OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, target, gasLimit, data)
+          OVM_CanonicalTransactionChain.enqueue(target, gasLimit, data)
         ).to.emit(OVM_CanonicalTransactionChain, 'TransactionEnqueued')
       })
 
@@ -253,7 +257,7 @@ describe('OVM_CanonicalTransactionChain', () => {
           it(`should be able to enqueue ${size} elements`, async () => {
             for (let i = 0; i < size; i++) {
               await expect(
-                OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, target, gasLimit, data)
+                OVM_CanonicalTransactionChain.enqueue(target, gasLimit, data)
               ).to.not.be.reverted
             }
           })
@@ -263,12 +267,6 @@ describe('OVM_CanonicalTransactionChain', () => {
   })
 
   describe('getQueueElement', () => {
-    it('should revert when accessing a non-existent element', async () => {
-      await expect(
-        OVM_CanonicalTransactionChain.getQueueElementByChainId(L2_CHAINID, 0)
-      ).to.be.revertedWith('Index out of bounds.')
-    })
-
     describe('when the requested element exists', () => {
       const target = NON_ZERO_ADDRESS
       const gasLimit = 500_000
@@ -288,11 +286,10 @@ describe('OVM_CanonicalTransactionChain', () => {
               data
             )
 
-            await OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, target, gasLimit, data)
+            await OVM_CanonicalTransactionChain.enqueue(target, gasLimit, data)
 
             for (let i = 0; i < size; i++) {
-              await OVM_CanonicalTransactionChain.enqueueByChainId(
-                L2_CHAINID,
+              await OVM_CanonicalTransactionChain.enqueue(
                 target,
                 gasLimit,
                 '0x' + '12'.repeat(i + 1)
@@ -333,15 +330,13 @@ describe('OVM_CanonicalTransactionChain', () => {
                   data
                 )
 
-                await OVM_CanonicalTransactionChain.enqueueByChainId(
-                  L2_CHAINID,
+                await OVM_CanonicalTransactionChain.enqueue(
                   target,
                   gasLimit,
                   data
                 )
               } else {
-                await OVM_CanonicalTransactionChain.enqueueByChainId(
-                  L2_CHAINID,
+                await OVM_CanonicalTransactionChain.enqueue(
                   target,
                   gasLimit,
                   '0x' + '12'.repeat(i + 1)
@@ -382,15 +377,13 @@ describe('OVM_CanonicalTransactionChain', () => {
                   data
                 )
 
-                await OVM_CanonicalTransactionChain.enqueueByChainId(
-                  L2_CHAINID,
+                await OVM_CanonicalTransactionChain.enqueue(
                   target,
                   gasLimit,
                   data
                 )
               } else {
-                await OVM_CanonicalTransactionChain.enqueueByChainId(
-                  L2_CHAINID,
+                await OVM_CanonicalTransactionChain.enqueue(
                   target,
                   gasLimit,
                   '0x' + '12'.repeat(i + 1)
@@ -443,8 +436,7 @@ describe('OVM_CanonicalTransactionChain', () => {
         describe(`when the queue has ${size} elements`, () => {
           beforeEach(async () => {
             for (let i = 0; i < size; i++) {
-              await OVM_CanonicalTransactionChain.enqueueByChainId(
-                L2_CHAINID,
+              await OVM_CanonicalTransactionChain.enqueue(
                 target,
                 gasLimit,
                 data
@@ -515,14 +507,13 @@ describe('OVM_CanonicalTransactionChain', () => {
 
       const timestamp = (await getEthTime(ethers.provider)) + 100
       await setEthTime(ethers.provider, timestamp)
-      await OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, entrypoint, gasLimit, data)
+      await OVM_CanonicalTransactionChain.enqueue(entrypoint, gasLimit, data)
 
       const blockNumber = await ethers.provider.getBlockNumber()
 
       await appendSequencerBatch(
         OVM_CanonicalTransactionChain.connect(sequencer),
         {
-          chainId: L2_CHAINID,
           shouldStartAtElement: 0,
           totalElementsToAppend: 1,
           contexts: [
@@ -627,7 +618,6 @@ describe('OVM_CanonicalTransactionChain', () => {
       await appendSequencerBatch(
         OVM_CanonicalTransactionChain.connect(sequencer),
         {
-          chainId: L2_CHAINID,
           shouldStartAtElement: 0,
           totalElementsToAppend: 1,
           contexts: [
@@ -644,7 +634,7 @@ describe('OVM_CanonicalTransactionChain', () => {
 
       expect(
         await OVM_CanonicalTransactionChain.verifyTransactionByChainId(
-          L2_CHAINID,
+          L2_CHAIN_ID,
           {
             timestamp,
             blockNumber,
@@ -686,7 +676,6 @@ describe('OVM_CanonicalTransactionChain', () => {
     it('should revert if expected start does not match current total batches', async () => {
       await expect(
         appendSequencerBatch(OVM_CanonicalTransactionChain, {
-          chainId: L2_CHAINID,
           transactions: ['0x1234'],
           contexts: [
             {
@@ -710,7 +699,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
       await expect(
         appendSequencerBatch(OVM_CanonicalTransactionChain, {
-          chainId: L2_CHAINID,
           transactions: ['0x1234', '0x1234'],
           contexts: [
             {
@@ -729,7 +717,6 @@ describe('OVM_CanonicalTransactionChain', () => {
     it('should revert if not called by the sequencer', async () => {
       await expect(
         appendSequencerBatch(OVM_CanonicalTransactionChain.connect(signer), {
-          chainId: L2_CHAINID,
           transactions: ['0x1234'],
           contexts: [
             {
@@ -748,7 +735,6 @@ describe('OVM_CanonicalTransactionChain', () => {
     it('should revert if no contexts are provided', async () => {
       await expect(
         appendSequencerBatch(OVM_CanonicalTransactionChain, {
-          chainId: L2_CHAINID,
           transactions: ['0x1234'],
           contexts: [],
           shouldStartAtElement: 0,
@@ -760,7 +746,6 @@ describe('OVM_CanonicalTransactionChain', () => {
     it('should revert if total elements to append is zero', async () => {
       await expect(
         appendSequencerBatch(OVM_CanonicalTransactionChain, {
-          chainId: L2_CHAINID,
           transactions: ['0x1234'],
           contexts: [
             {
@@ -786,7 +771,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
       await expect(
         appendSequencerBatch(OVM_CanonicalTransactionChain, {
-          chainId: L2_CHAINID,
           transactions: [data],
           contexts: [
             {
@@ -810,29 +794,6 @@ describe('OVM_CanonicalTransactionChain', () => {
       const data = '0x' + '12'.repeat(1234)
 
       describe('when the sequencer attempts to add more queue transactions than exist', () => {
-        it('reverts when there are zero transactions in the queue', async () => {
-          const timestamp = await getEthTime(ethers.provider)
-          const blockNumber = (await getNextBlockNumber(ethers.provider)) - 1
-
-
-          await expect(
-            appendSequencerBatch(OVM_CanonicalTransactionChain, {
-              chainId: L2_CHAINID,
-              transactions: ['0x1234'],
-              contexts: [
-                {
-                  numSequencedTransactions: 1,
-                  numSubsequentQueueTransactions: 1,
-                  timestamp,
-                  blockNumber,
-                },
-              ],
-              shouldStartAtElement: 0,
-              totalElementsToAppend: 1,
-            })
-          ).to.be.revertedWith('Index out of bounds.')
-        })
-
         it('reverts when there are insufficient (but nonzero) transactions in the queue', async () => {
           const timestamp = await getEthTime(ethers.provider)
           const blockNumber = (await getNextBlockNumber(ethers.provider)) - 1
@@ -844,7 +805,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
           await expect(
             appendSequencerBatch(OVM_CanonicalTransactionChain, {
-              chainId: L2_CHAINID,
               transactions: ['0x1234'],
               contexts: [
                 {
@@ -869,7 +829,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234', '0x5678'],
                 contexts: [
                   {
@@ -899,7 +858,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234', '0x5678'],
                 contexts: [
                   {
@@ -940,7 +898,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
               await expect(
                 appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                  chainId: L2_CHAINID,
                   transactions: ['0x1234'],
                   contexts: [
                     {
@@ -965,7 +922,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
               await expect(
                 appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                  chainId: L2_CHAINID,
                   transactions: ['0x1234'],
                   contexts: [
                     {
@@ -1008,7 +964,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
             it('does not revert for valid context', async () => {
               await appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: new Array(numQueuedTransactions).fill('0x1234'),
                 contexts: validContexts,
                 shouldStartAtElement: 0,
@@ -1024,7 +979,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
               await expect(
                 appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                  chainId: L2_CHAINID,
                   transactions: new Array(numQueuedTransactions).fill('0x1234'),
                   contexts: invalidTimestampContexts,
                   shouldStartAtElement: 0,
@@ -1043,7 +997,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
               await expect(
                 appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                  chainId: L2_CHAINID,
                   transactions: new Array(numQueuedTransactions).fill('0x1234'),
                   contexts: invalidBlockNumberContexts,
                   shouldStartAtElement: 0,
@@ -1065,7 +1018,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234'],
                 contexts: [
                   {
@@ -1087,7 +1039,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234', '0x1234'],
                 contexts: [
                   {
@@ -1115,7 +1066,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234'],
                 contexts: [
                   {
@@ -1144,7 +1094,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
           await expect(
             appendSequencerBatch(OVM_CanonicalTransactionChain, {
-              chainId: L2_CHAINID,
               transactions: ['0x1234'],
               contexts: [
                 {
@@ -1169,7 +1118,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
           await expect(
             appendSequencerBatch(OVM_CanonicalTransactionChain, {
-              chainId: L2_CHAINID,
               transactions: ['0x1234'],
               contexts: [
                 {
@@ -1194,7 +1142,6 @@ describe('OVM_CanonicalTransactionChain', () => {
             timestamp = await getEthTime(ethers.provider)
             blockNumber = (await getNextBlockNumber(ethers.provider)) - 1
             await appendSequencerBatch(OVM_CanonicalTransactionChain, {
-              chainId: L2_CHAINID,
               transactions: ['0x1234'],
               contexts: [
                 {
@@ -1212,7 +1159,6 @@ describe('OVM_CanonicalTransactionChain', () => {
           it('reverts if timestamp is older than previous one', async () => {
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234'],
                 contexts: [
                   {
@@ -1233,7 +1179,6 @@ describe('OVM_CanonicalTransactionChain', () => {
           it('reverts if block number is older than previous one', async () => {
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234'],
                 contexts: [
                   {
@@ -1259,7 +1204,6 @@ describe('OVM_CanonicalTransactionChain', () => {
             blockNumber = await getNextBlockNumber(ethers.provider)
             await OVM_CanonicalTransactionChain.enqueue(target, gasLimit, data)
             await appendSequencerBatch(OVM_CanonicalTransactionChain, {
-              chainId: L2_CHAINID,
               transactions: ['0x1234'],
               contexts: [
                 {
@@ -1277,7 +1221,6 @@ describe('OVM_CanonicalTransactionChain', () => {
           it('reverts if timestamp is older than previous one', async () => {
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234'],
                 contexts: [
                   {
@@ -1298,7 +1241,6 @@ describe('OVM_CanonicalTransactionChain', () => {
           it('reverts if block number is older than previous one', async () => {
             await expect(
               appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                chainId: L2_CHAINID,
                 transactions: ['0x1234'],
                 contexts: [
                   {
@@ -1320,7 +1262,7 @@ describe('OVM_CanonicalTransactionChain', () => {
 
       it('should revert if a queue element has expired and needs to be included', async () => {
         // enqueue a tx
-        await OVM_CanonicalTransactionChain.enqueueByChainId(L2_CHAINID, target, gasLimit, data)
+        await OVM_CanonicalTransactionChain.enqueue(target, gasLimit, data)
         // increase time past force inclusion period
         await increaseEthTime(
           ethers.provider,
@@ -1333,7 +1275,6 @@ describe('OVM_CanonicalTransactionChain', () => {
 
         await expect(
           appendSequencerBatch(OVM_CanonicalTransactionChain, {
-            chainId: L2_CHAINID,
             transactions: ['0x1234'],
             contexts: [
               {
@@ -1384,7 +1325,6 @@ describe('OVM_CanonicalTransactionChain', () => {
             it('should append the given number of transactions', async () => {
               await expect(
                 appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                  chainId: L2_CHAINID,
                   transactions,
                   contexts,
                   shouldStartAtElement: 0,
@@ -1395,7 +1335,7 @@ describe('OVM_CanonicalTransactionChain', () => {
                   OVM_CanonicalTransactionChain,
                   'SequencerBatchAppended'
                 )
-                .withArgs(L2_CHAINID, 0, 0, size)
+                .withArgs(L2_CHAIN_ID, 0, 0, size)
             })
           })
         })
@@ -1436,7 +1376,6 @@ describe('OVM_CanonicalTransactionChain', () => {
             it('should append the batch', async () => {
               await expect(
                 appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                  chainId: L2_CHAINID,
                   transactions,
                   contexts,
                   shouldStartAtElement: 0,
@@ -1447,7 +1386,7 @@ describe('OVM_CanonicalTransactionChain', () => {
                   OVM_CanonicalTransactionChain,
                   'SequencerBatchAppended'
                 )
-                .withArgs(L2_CHAINID, 0, size, size * 2)
+                .withArgs(L2_CHAIN_ID, 0, size, size * 2)
             })
           })
 
@@ -1477,7 +1416,6 @@ describe('OVM_CanonicalTransactionChain', () => {
             it('should append the batch', async () => {
               await expect(
                 appendSequencerBatch(OVM_CanonicalTransactionChain, {
-                  chainId: L2_CHAINID,
                   transactions,
                   contexts,
                   shouldStartAtElement: 0,
@@ -1488,7 +1426,7 @@ describe('OVM_CanonicalTransactionChain', () => {
                   OVM_CanonicalTransactionChain,
                   'SequencerBatchAppended'
                 )
-                .withArgs(L2_CHAINID, 0, spacing, size + spacing)
+                .withArgs(L2_CHAIN_ID, 0, spacing, size + spacing)
             })
           })
         })
@@ -1523,7 +1461,6 @@ describe('OVM_CanonicalTransactionChain', () => {
           const res = await appendSequencerBatch(
             OVM_CanonicalTransactionChain.connect(sequencer),
             {
-              chainId: L2_CHAINID,
               transactions,
               contexts,
               shouldStartAtElement: 0,

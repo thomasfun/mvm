@@ -9,6 +9,7 @@ import { remove0x, toHexString } from '@eth-optimism/core-utils'
 /* Internal Imports */
 import {
   makeAddressManager,
+  makeMVMAddressManager,
   setProxyTarget,
   NON_NULL_BYTES32,
   NON_ZERO_ADDRESS,
@@ -47,8 +48,10 @@ describe('OVM_L1CrossDomainMessenger', () => {
   })
 
   let AddressManager: Contract
+  let MVM_AddressManager: Contract
   before(async () => {
     AddressManager = await makeAddressManager()
+    MVM_AddressManager = await makeMVMAddressManager()
   })
 
   let Mock__TargetContract: MockContract
@@ -98,6 +101,7 @@ describe('OVM_L1CrossDomainMessenger', () => {
     )
     OVM_CanonicalTransactionChain =
       await Factory__OVM_CanonicalTransactionChain.deploy(
+        MVM_AddressManager.address,
         AddressManager.address,
         FORCE_INCLUSION_PERIOD_SECONDS,
         FORCE_INCLUSION_PERIOD_BLOCKS,

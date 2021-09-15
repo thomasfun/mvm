@@ -20,7 +20,7 @@ export interface RollupDeployConfig {
     L2CrossDomainMessengerAddress: string
   }
   transactionChainConfig: {
-  sequencer: string | Signer
+    sequencer: string | Signer
     forceInclusionPeriodSeconds: number
     forceInclusionPeriodBlocks: number
   }

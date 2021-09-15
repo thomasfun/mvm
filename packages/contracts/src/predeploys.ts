@@ -7,7 +7,7 @@
  * use and has therefore been removed. We may place a new predeployed contract at this address
  * in the future. See https://github.com/ethereum-optimism/optimism/pull/549 for more info.
  */
- export const predeploys = {
+export const predeploys = {
   OVM_L2ToL1MessagePasser: '0x4200000000000000000000000000000000000000',
   OVM_L1MessageSender: '0x4200000000000000000000000000000000000001',
   OVM_DeployerWhitelist: '0x4200000000000000000000000000000000000002',
