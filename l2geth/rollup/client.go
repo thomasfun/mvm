@@ -476,7 +476,7 @@ func (c *Client) GetEthContext(blockNumber uint64) (*EthContext, error) {
 			"chainId":     c.chainID,
 		}).
 		SetResult(&EthContext{}).
-		Get("/eth/context/blocknumber/{blocknumber}/{chainId}")
+		Get("/eth/context/blocknumber/{blocknumber}")
 
 	if err != nil {
 		return nil, err
