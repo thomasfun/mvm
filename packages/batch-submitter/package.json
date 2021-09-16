@@ -45,7 +45,6 @@
     "dotenv": "^8.2.0",
     "ethers": "5.4.5",
     "@metis.io/contracts": "^1.1.*",
-    "old-contracts": "npm:@eth-optimism/contracts@^0.0.2-alpha.7",
     "prom-client": "^13.1.0"
   },
   "devDependencies": {
