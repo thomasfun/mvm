@@ -156,8 +156,8 @@ export class StateBatchSubmitter extends BatchSubmitter {
   ): Promise<TransactionReceipt> {
     const batch = await this._generateStateCommitmentBatch(startBlock, endBlock)
     const calldata = this.chainContract.interface.encodeFunctionData(
-      'appendStateBatch',
-      [batch, startBlock]
+      'appendStateBatchByChainId',
+      [this.l2ChainId, batch, startBlock]
     )
     const batchSizeInBytes = remove0x(calldata).length / 2
     this.logger.debug('State batch generated', {
