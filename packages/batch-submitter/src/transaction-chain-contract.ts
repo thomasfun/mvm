@@ -6,10 +6,10 @@ import {
 } from '@ethersproject/abstract-provider'
 import { keccak256 } from 'ethers/lib/utils'
 import {
-  //AppendSequencerBatchParams,
   BatchContext,
   encodeAppendSequencerBatch,
   remove0x,
+  encodeHex,
 } from '@eth-optimism/core-utils'
 
 interface AppendSequencerBatchParams {
@@ -70,9 +70,12 @@ const appendSequencerBatch = async (
   batch: AppendSequencerBatchParams,
   options?: TransactionRequest
 ): Promise<TransactionResponse> => {
+  let calldata = getEncodedCalldata(batch)
+  //add chain id parameter before original batch
+  calldata = encodeHex(batch.chainId, 64) + calldata
   return OVM_CanonicalTransactionChain.signer.sendTransaction({
     to: OVM_CanonicalTransactionChain.address,
-    data: getEncodedCalldata(batch),
+    data: calldata,
     ...options,
   })
 }
