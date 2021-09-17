@@ -83,6 +83,24 @@ contract OVM_CrossDomainEnabled {
         return iOVM_CrossDomainMessenger(messenger);
     }
 
+
+    /**
+     * Sends a message to an account on another domain
+     * @param _crossDomainTarget The intended recipient on the destination domain
+     * @param _data The data to send to the target (usually calldata to a function with
+     *  `onlyFromCrossDomainAccount()`)
+     * @param _gasLimit The gasLimit for the receipt of the message on the target domain.
+     */
+    function sendCrossDomainMessage(
+        address _crossDomainTarget,
+        bytes memory _data,
+        uint32 _gasLimit
+    )
+        internal
+    {
+        getCrossDomainMessenger().sendMessage(_crossDomainTarget, _data, _gasLimit);
+    }
+
     /**
      * Sends a message to an account on another domain
      * @param _crossDomainTarget The intended recipient on the destination domain
