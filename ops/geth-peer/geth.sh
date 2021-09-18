@@ -14,7 +14,7 @@ echo "URL => $URL">> /app/log/t_geth.log
 if [[ ! -z "$URL" ]]; then
     # get the addrs from the URL provided
     ADDRESSES=$(curl --fail --show-error --silent --retry-connrefused --retry $RETRIES --retry-delay 5 $URL)
-    
+
     # set all the necessary env vars
     envSet ETH1_ADDRESS_RESOLVER_ADDRESS AddressManager
     envSet ETH1_L1_CROSS_DOMAIN_MESSENGER_ADDRESS Proxy__OVM_L1CrossDomainMessenger
@@ -25,7 +25,7 @@ if [[ ! -z "$URL" ]]; then
     if [ $ETH1_L1_ETH_GATEWAY_ADDRESS == null ]; then
         envSet ETH1_L1_ETH_GATEWAY_ADDRESS OVM_L1ETHGateway
     fi
-    envSet MVM_L1GATEWAY_ADDRESS Proxy__MVM_L1MetisGateway
+    envSet MVM_L1GATEWAY_ADDRESS Proxy__OVM_Metis_L1StandardBridge
     if [ $MVM_L1GATEWAY_ADDRESS == null ]; then
         envSet MVM_L1GATEWAY_ADDRESS MVM_L1MetisGateway
     fi
