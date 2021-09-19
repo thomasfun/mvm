@@ -14,12 +14,14 @@ import (
 	"github.com/MetisProtocol/l2geth/common"
 	"github.com/MetisProtocol/l2geth/core"
 	"github.com/MetisProtocol/l2geth/core/state"
+	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/ethdb"
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/log"
 
 	"github.com/MetisProtocol/l2geth/core/rawdb"
 	"github.com/MetisProtocol/l2geth/core/types"
+
 	"github.com/MetisProtocol/l2geth/eth/gasprice"
 	"github.com/MetisProtocol/l2geth/rollup/fees"
 )
@@ -140,6 +142,10 @@ func NewSyncService(ctx context.Context, cfg Config, txpool *core.TxPool, bc *co
 		value := new(big.Int)
 		log.Info("Sanitizing minimum L2 gas limit", "value", value)
 		cfg.MinL2GasLimit = value
+	}
+
+	if vm.EnableArbitraryContractDeployment != nil {
+		log.Info("Setting arbitrary contract deployment", "value", *vm.EnableArbitraryContractDeployment)
 	}
 
 	service := SyncService{
