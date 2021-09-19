@@ -122,15 +122,15 @@ contract OVM_CrossDomainEnabled {
      * @notice Sends a message to an account on another domain
      * @param _chainId L2 chain id.
      * @param _crossDomainTarget The intended recipient on the destination domain
-     * @param _data The data to send to the target (usually calldata to a function with `onlyFromCrossDomainAccount()`)
      * @param _gasLimit The gasLimit for the receipt of the message on the target domain.
+     * @param _message The data to send to the target (usually calldata to a function with `onlyFromCrossDomainAccount()`)
      */
     function sendCrossDomainMessageViaChainId(
         uint256 _chainId,
         address _crossDomainTarget,
-        bytes memory _data,
-        uint32 _gasLimit
+        uint32 _gasLimit,
+        bytes memory _message
     ) internal {
-        getCrossDomainMessenger().sendMessageViaChainId(_chainId, _crossDomainTarget, _data, _gasLimit);
+        getCrossDomainMessenger().sendMessageViaChainId(_chainId, _crossDomainTarget, _message, _gasLimit);
     }
 }

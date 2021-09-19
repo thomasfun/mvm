@@ -117,6 +117,25 @@ contract OVM_Metis_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEna
         );
     }
 
+    function depositETHByChainId(
+        uint256 _chainId,
+        uint32 _l2Gas,
+        bytes calldata _data
+    )
+        external
+        override
+        payable
+        onlyEOA()
+    {
+        _initiateETHDepositByChainId(
+            _chainId,
+            msg.sender,
+            msg.sender,
+            _l2Gas,
+            _data
+        );
+    }
+
     /**
      * @inheritdoc iOVM_L1StandardBridge
      */
@@ -130,6 +149,25 @@ contract OVM_Metis_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEna
         payable
     {
         _initiateETHDeposit(
+            msg.sender,
+            _to,
+            _l2Gas,
+            _data
+        );
+    }
+
+    function depositETHToByChainId(
+        uint256 _chainId,
+        address _to,
+        uint32 _l2Gas,
+        bytes calldata _data
+    )
+        external
+        override
+        payable
+    {
+        _initiateETHDepositByChainId(
+            _chainId,
             msg.sender,
             _to,
             _l2Gas,
@@ -169,6 +207,38 @@ contract OVM_Metis_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEna
 
         // Send calldata into L2
         sendCrossDomainMessage(
+            l2TokenBridge,
+            _l2Gas,
+            message
+        );
+
+        emit ETHDepositInitiated(_from, _to, msg.value, _data);
+    }
+
+    function _initiateETHDepositByChainId(
+        uint256 _chainId,
+        address _from,
+        address _to,
+        uint32 _l2Gas,
+        bytes memory _data
+    )
+        internal
+    {
+        // Construct calldata for finalizeDeposit call
+        bytes memory message =
+            abi.encodeWithSelector(
+                iOVM_L2ERC20Bridge.finalizeDeposit.selector,
+                address(0),
+                Lib_PredeployAddresses.OVM_ETH,
+                _from,
+                _to,
+                msg.value,
+                _data
+            );
+
+        // Send calldata into L2
+        sendCrossDomainMessageViaChainId(
+            _chainId,
             l2TokenBridge,
             _l2Gas,
             message

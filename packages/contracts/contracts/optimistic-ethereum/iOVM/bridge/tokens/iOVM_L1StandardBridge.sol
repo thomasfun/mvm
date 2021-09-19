@@ -44,6 +44,14 @@ interface iOVM_L1StandardBridge is iOVM_L1ERC20Bridge {
         external
         payable;
 
+    function depositETHByChainId (
+        uint256 _chainId,
+        uint32 _l2Gas,
+        bytes calldata _data
+    )
+        external
+        payable;
+
     /**
      * @dev Deposit an amount of ETH to a recipient's balance on L2.
      * @param _to L2 address to credit the withdrawal to.
@@ -53,6 +61,15 @@ interface iOVM_L1StandardBridge is iOVM_L1ERC20Bridge {
      *        length, these contracts provide no guarantees about its content.
      */
     function depositETHTo (
+        address _to,
+        uint32 _l2Gas,
+        bytes calldata _data
+    )
+        external
+        payable;
+
+    function depositETHToByChainId (
+        uint256 _chainId,
         address _to,
         uint32 _l2Gas,
         bytes calldata _data
