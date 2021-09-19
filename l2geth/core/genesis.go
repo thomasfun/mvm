@@ -317,7 +317,7 @@ func ApplyOvmStateToState(statedb *state.StateDB, stateDump *dump.OvmDump, l1XDo
 	}
 	// UsingMVM we are mvm not ovm, so we run mvm coinbase
 	// mvm is used for metis token
-	gateway := common.HexToAddress(os.Getenv("MVM_L1GATEWAY_ADDRESS"))
+	gateway := common.HexToAddress(os.Getenv("MVM_L1_STANDARD_BRIDGE_ADDRESS"))
 	MVM_Coinbase, ok := stateDump.Accounts["MVM_Coinbase"]
 	if ok {
 		log.Info("Setting OVM_L1ETHGateway in MVM_Coinbase", "address", gateway.Hex())

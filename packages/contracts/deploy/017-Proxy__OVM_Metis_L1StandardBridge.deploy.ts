@@ -48,7 +48,7 @@ const deployFn: DeployFunction = async (hre) => {
     'Proxy__OVM_Metis_L1StandardBridge',
     {
       signerOrProvider: deployer,
-      iface: 'OVM_L1StandardBridge',
+      iface: 'OVM_Metis_L1StandardBridge',
     }
   )
 
@@ -100,7 +100,7 @@ const deployFn: DeployFunction = async (hre) => {
   )
 }
 
-deployFn.dependencies = ['Lib_AddressManager', 'OVM_L1StandardBridge']
+deployFn.dependencies = ['Lib_AddressManager', 'OVM_Metis_L1StandardBridge']
 deployFn.tags = ['Proxy__OVM_Metis_L1StandardBridge']
 
 export default deployFn

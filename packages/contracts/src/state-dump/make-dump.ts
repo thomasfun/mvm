@@ -141,6 +141,7 @@ export const makeStateDump = async (cfg: RollupDeployConfig): Promise<any> => {
       'OVM_ETH',
       'OVM_ExecutionManagerWrapper',
       'OVM_GasPriceOracle',
+      'MVM_GasOracle',
       'OVM_SequencerFeeVault',
       'OVM_L2StandardBridge',
     ],
@@ -167,6 +168,7 @@ export const makeStateDump = async (cfg: RollupDeployConfig): Promise<any> => {
     'OVM_ProxyEOA',
     'OVM_ExecutionManagerWrapper',
     'OVM_GasPriceOracle',
+    'MVM_GasOracle',
     'OVM_SequencerFeeVault',
     'OVM_L2StandardBridge',
   ]
