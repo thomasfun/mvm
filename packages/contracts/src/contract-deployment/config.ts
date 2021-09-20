@@ -226,6 +226,10 @@ export const makeContractDeployConfig = async (
       factory: getContractFactory('mockOVM_BondManager'),
       params: [AddressManager.address],
     },
+    MVM_Coinbase: {
+      factory: getContractFactory('MVM_Coinbase'),
+      params: [],
+    },
     OVM_ETH: {
       factory: getContractFactory('OVM_ETH'),
       params: [],

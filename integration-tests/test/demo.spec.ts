@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import assert = require('assert')
 import { JsonRpcProvider, TransactionResponse } from '@ethersproject/providers'
 import { BigNumber, Contract, Wallet, utils } from 'ethers'
-import { getContractInterface } from '@metis.io/contracts'
+import { predeploys, getContractInterface } from '@metis.io/contracts'
 import { Watcher } from '@eth-optimism/core-utils'
 import dotenv = require('dotenv')
 import * as path from 'path';
@@ -28,7 +28,6 @@ export const getEnvironment = async (): Promise<{
 }
 
 
-const MVM_Coinbase_ADDRESS = '0x4200000000000000000000000000000000000006'
 const PROXY_SEQUENCER_ENTRYPOINT_ADDRESS = '0x4200000000000000000000000000000000000004'
 const TAX_ADDRESS = '0x1234123412341234123412341234123412341234'
 
@@ -57,7 +56,7 @@ describe('Fee Payment Integration Tests', async () => {
       const l1UserBalance = await l1Wallet.getBalance()
       const l2UserBalance = await MVM_Coinbase.balanceOf(l2Wallet.address)
       const sequencerBalance = await MVM_Coinbase.balanceOf(PROXY_SEQUENCER_ENTRYPOINT_ADDRESS)
-      const l1GatewayBalance = await MVM_Coinbase.balanceOf('0x4200000000000000000000000000000000000005')
+      const l1GatewayBalance = await MVM_Coinbase.balanceOf(predeploys.OVM_SequencerEntrypoint)
       return {
         l1UserBalance,
         l2UserBalance,
@@ -77,23 +76,24 @@ describe('Fee Payment Integration Tests', async () => {
     const addressManagerInterface = getContractInterface('Lib_AddressManager')
     AddressManager = new Contract(addressManagerAddress, addressManagerInterface, l1Provider)
     MVM_Coinbase = new Contract(
-      MVM_Coinbase_ADDRESS,
+      predeploys.MVM_Coinbase,
       getContractInterface('MVM_Coinbase'),
       l2Wallet
     )
 
-    console.log(await MVM_Coinbase.l1TokenGateway(),
-    await AddressManager.getAddress('Proxy__OVM_L1ETHGateway'),
-    await AddressManager.getAddress('OVM_L1ETHGateway'),
-    await AddressManager.getAddress('OVM_L2BatchMessageRelayer'))
-    const l1GatewayInterface = getContractInterface('iOVM_L1ETHGateway')
+    console.log(
+      await MVM_Coinbase.l1Token(),
+      await AddressManager.getAddress('Proxy__OVM_L1StandardBridge'),
+      await AddressManager.getAddress('OVM_L2BatchMessageRelayer'))
+    const l1StandardBridgeInterface = getContractInterface('iOVM_L1StandardBridge')
+
     OVM_L1ETHGateway = new Contract(
-      await AddressManager.getAddress('Proxy__OVM_L1ETHGateway'),
-      l1GatewayInterface,
+      await AddressManager.getAddress('Proxy__OVM_L1StandardBridge'),
+      l1StandardBridgeInterface,
       l1Wallet
     )
     OVM_L2CrossDomainMessenger = new Contract(
-      '0x4200000000000000000000000000000000000007',
+      predeploys.OVM_L2CrossDomainMessenger,
       getContractInterface('OVM_L2CrossDomainMessenger'),
       l2Wallet
     )
@@ -102,19 +102,16 @@ describe('Fee Payment Integration Tests', async () => {
   beforeEach(async () => {
     const depositAmount = utils.parseEther('100')
     let postBalances = await getBalances()
-    console.log(postBalances.l1UserBalance+","+postBalances.l2UserBalance+","+postBalances.l1GatewayBalance+","+postBalances.sequencerBalance)
-    // await waitForDepositTypeTransaction( l2Wallet.address
-    const tx2 =await  OVM_L1ETHGateway.depositToByChainId(429,'0x63eF89a2BB0DBEA96480C123AFB9583f6629288B',{
-        value: depositAmount,
-        gasLimit: '9400000',
-        gasPrice: 10500
-      })
-    //   watcher, l1Provider, l2Provider
-    // )
-    const res=await tx2.wait()
-    //console.log(res)
+    console.log(postBalances.l1UserBalance + "," + postBalances.l2UserBalance + "," + postBalances.l1GatewayBalance + "," + postBalances.sequencerBalance)
+    const tx2 = await OVM_L1ETHGateway.depositETHToByChainId(429, '0x63eF89a2BB0DBEA96480C123AFB9583f6629288B', {
+      value: depositAmount,
+      gasLimit: '9400000',
+      gasPrice: 10500
+    })
+    const res = await tx2.wait()
+    console.log(res)
     postBalances = await getBalances()
-    console.log(postBalances.l1UserBalance+","+postBalances.l2UserBalance+","+postBalances.l1GatewayBalance+","+postBalances.sequencerBalance)
+    console.log(postBalances.l1UserBalance + "," + postBalances.l2UserBalance + "," + postBalances.l1GatewayBalance + "," + postBalances.sequencerBalance)
   })
 
 
