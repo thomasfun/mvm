@@ -25,8 +25,8 @@ contract MVM_Coinbase is L2StandardERC20, IWETH9 {
         L2StandardERC20(
             Lib_PredeployAddresses.L2_STANDARD_BRIDGE,
             address(0),
-            "Ether",
-            "ETH"
+            "Metis Token",
+            "Metis"
         )
     {}
 
