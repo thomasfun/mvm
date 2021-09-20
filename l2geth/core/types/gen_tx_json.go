@@ -13,8 +13,8 @@ import (
 
 var _ = (*txdataMarshaling)(nil)
 
-// TransactionMarshalJSON marshals as JSON.
-func (t txdata) TransactionMarshalJSON() ([]byte, error) {
+// MarshalJSON marshals as JSON.
+func (t txdata) MarshalJSON() ([]byte, error) {
 	type txdata struct {
 		AccountNonce hexutil.Uint64  `json:"nonce"    gencodec:"required"`
 		Price        *hexutil.Big    `json:"gasPrice" gencodec:"required"`
@@ -31,7 +31,6 @@ func (t txdata) TransactionMarshalJSON() ([]byte, error) {
 		// L1BlockNumber     *hexutil.Big          `json:"l1BlockNumber"`
 		// L1Timestamp       hexutil.Uint64            `json:"l1Timestamp"`
 		// L1MessageSender   *common.Address   `json:"L1MessageSender" gencodec:"required"`
-		// SignatureHashType SignatureHashType `json:"signatureHashType" gencodec:"required"`
 		// QueueOrigin       *hexutil.Big          `json:"queueOrigin" gencodec:"required"`
 		// // The canonical transaction chain index
 		// Index hexutil.Uint64 `json:"index" gencodec:"required"`
@@ -53,15 +52,14 @@ func (t txdata) TransactionMarshalJSON() ([]byte, error) {
 	// enc.L1BlockNumber = (*hexutil.Big)(t.L1BlockNumber)
 	// enc.L1Timestamp = hexutil.Uint64(t.L1Timestamp)
 	// enc.L1MessageSender = t.L1MessageSender
-	// enc.SignatureHashType = t.SignatureHashType
 	// enc.QueueOrigin = (*hexutil.Big)(t.QueueOrigin)
 	// enc.Index = hexutil.Uint64(*t.Index)
 	// enc.QueueIndex = hexutil.Uint64(*t.QueueIndex)
 	return json.Marshal(&enc)
 }
 
-// TransactionUnmarshalJSON unmarshals from JSON.
-func (t *txdata) TransactionUnmarshalJSON(input []byte) error {
+// UnmarshalJSON unmarshals from JSON.
+func (t *txdata) UnmarshalJSON(input []byte) error {
 	type txdata struct {
 		AccountNonce *hexutil.Uint64 `json:"nonce"    gencodec:"required"`
 		Price        *hexutil.Big    `json:"gasPrice" gencodec:"required"`
@@ -78,7 +76,6 @@ func (t *txdata) TransactionUnmarshalJSON(input []byte) error {
 		// L1BlockNumber     *hexutil.Big          `json:"l1BlockNumber"`
 		// L1Timestamp       *hexutil.Uint64            `json:"l1Timestamp"`
 		// L1MessageSender   *common.Address   `json:"L1MessageSender" gencodec:"required"`
-		// SignatureHashType SignatureHashType `json:"signatureHashType" gencodec:"required"`
 		// QueueOrigin       *hexutil.Big          `json:"queueOrigin" gencodec:"required"`
 		// // The canonical transaction chain index
 		// Index *hexutil.Uint64 `json:"index" gencodec:"required"`
@@ -136,8 +133,7 @@ func (t *txdata) TransactionUnmarshalJSON(input []byte) error {
 	// }
 	// if dec.L1MessageSender != nil {
 	// 	t.L1MessageSender = dec.L1MessageSender
-	// }	
-	// t.SignatureHashType = dec.SignatureHashType
+	// }
 	// if dec.QueueOrigin != nil {
 	// 	t.QueueOrigin = (*big.Int)(dec.QueueOrigin)
 	// }

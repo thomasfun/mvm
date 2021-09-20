@@ -39,7 +39,6 @@ import (
 	"github.com/MetisProtocol/l2geth/core/types"
 	"github.com/MetisProtocol/l2geth/core/vm"
 	"github.com/MetisProtocol/l2geth/crypto"
-	"github.com/MetisProtocol/l2geth/diffdb"
 	"github.com/MetisProtocol/l2geth/log"
 	"github.com/MetisProtocol/l2geth/p2p"
 	"github.com/MetisProtocol/l2geth/params"
@@ -50,12 +49,11 @@ import (
 	"github.com/tyler-smith/go-bip39"
 )
 
-const (
-	defaultGasPrice = params.Wei * fees.TxGasPrice
-)
-
 var errOVMUnsupported = errors.New("OVM: Unsupported RPC Method")
-var bigDefaultGasPrice = new(big.Int).SetUint64(defaultGasPrice)
+
+// TEMPORARY: Set the gas price to 0 until message passing and ETH value work again.
+// Otherwise the integration tests won't pass because the accounts have no ETH.
+var bigDefaultGasPrice = new(big.Int).SetUint64(0)
 
 // PublicEthereumAPI provides an API to access Ethereum related information.
 // It offers only methods that operate on public data that is freely available to anyone.
@@ -540,7 +538,7 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address common.Add
 	if state == nil || err != nil {
 		return nil, err
 	}
-	return (*hexutil.Big)(state.GetOVMBalance(address)), state.Error()
+	return (*hexutil.Big)(state.GetBalance(address)), state.Error()
 }
 
 // Result structs for GetProof
@@ -557,73 +555,6 @@ type StorageResult struct {
 	Key   string       `json:"key"`
 	Value *hexutil.Big `json:"value"`
 	Proof []string     `json:"proof"`
-}
-
-// Result structs for GetStateDiffProof
-type StateDiffProof struct {
-	Header   *HeaderMeta     `json:"header"`
-	Accounts []AccountResult `json:"accounts"`
-}
-type HeaderMeta struct {
-	Number    *big.Int    `json:"number"`
-	Hash      common.Hash `json:"hash"`
-	StateRoot common.Hash `json:"stateRoot"`
-	Timestamp uint64      `json:"timestamp"`
-}
-
-func (s *PublicBlockChainAPI) GetStateDiff(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (diffdb.Diff, error) {
-	_, header, err := s.b.StateAndHeaderByNumberOrHash(ctx, blockNrOrHash)
-	if err != nil {
-		return nil, err
-	}
-	return s.b.GetDiff(new(big.Int).Add(header.Number, big.NewInt(1)))
-}
-
-// GetStateDiffProof returns the Merkle-proofs corresponding to all the accounts and
-// storage slots which were touched for a given block number or hash.
-func (s *PublicBlockChainAPI) GetStateDiffProof(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) (*StateDiffProof, error) {
-	state, header, err := s.b.StateAndHeaderByNumberOrHash(ctx, blockNrOrHash)
-	if state == nil || header == nil || err != nil {
-		return nil, err
-	}
-
-	// get the changed accounts for this block
-	diffs, err := s.GetStateDiff(ctx, blockNrOrHash)
-	if err != nil {
-		return nil, err
-	}
-
-	// for each changed account, get their proof
-	var accounts []AccountResult
-	for address, keys := range diffs {
-		// need to convert the hashes to strings, we could maybe refactor getProof
-		// alternatively
-		keyStrings := make([]string, len(keys))
-		for i, key := range keys {
-			keyStrings[i] = key.Key.String()
-		}
-
-		// get the proofs
-		res, err := s.GetProof(ctx, address, keyStrings, blockNrOrHash)
-		if err != nil {
-			return nil, err
-		}
-
-		accounts = append(accounts, *res)
-	}
-
-	// add some metadata
-	stateDiffProof := &StateDiffProof{
-		Header: &HeaderMeta{
-			Number:    header.Number,
-			Hash:      header.Hash(),
-			StateRoot: header.Root,
-			Timestamp: header.Time,
-		},
-		Accounts: accounts,
-	}
-
-	return stateDiffProof, state.Error()
 }
 
 // GetProof returns the Merkle-proof for a given account and optionally some storage keys.
@@ -905,7 +836,7 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		}
 	}
 	// Set default gas & gas price if none were set
-	gas := b.GasLimit()
+	gas := uint64(math.MaxUint64 / 2)
 	if args.Gas != nil {
 		gas = uint64(*args.Gas)
 	}
@@ -913,7 +844,7 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		log.Warn("Caller gas above allowance, capping", "requested", gas, "cap", globalGasCap)
 		gas = globalGasCap.Uint64()
 	}
-	gasPrice := new(big.Int).SetUint64(defaultGasPrice)
+	gasPrice := new(big.Int)
 	if args.GasPrice != nil {
 		gasPrice = args.GasPrice.ToInt()
 	}
@@ -928,16 +859,12 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		data = []byte(*args.Data)
 	}
 
+	// Currently, the blocknumber and timestamp actually refer to the L1BlockNumber and L1Timestamp
+	// attached to each transaction. We need to modify the blocknumber and timestamp to reflect this,
+	// or else the result of `eth_call` will not be correct.
 	blockNumber := header.Number
-	timestamp := new(big.Int).SetUint64(header.Time)
-
-	// Create new call message
-	var msg core.Message
-	msg = types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, nil, types.QueueOriginSequencer, 0)
+	timestamp :=  new(big.Int).SetUint64(header.Time)
 	if vm.UsingOVM {
-		cfg := b.ChainConfig()
-		executionManager := cfg.StateDump.Accounts["OVM_ExecutionManager"]
-		stateManager := cfg.StateDump.Accounts["OVM_StateManager"]
 		block, err := b.BlockByNumber(ctx, rpc.BlockNumber(header.Number.Uint64()))
 		if err != nil {
 			return nil, 0, false, err
@@ -956,12 +883,35 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 				// msg = types.NewMessage2(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, nil, types.QueueOriginSequencer, 0, tx.L1Timestamp(), tx.GetMeta().Index, tx.GetMeta().QueueIndex)
 			}
 		}
+	}
+
+	// Create new call message
+	var msg core.Message
+	msg = types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, blockNumber, types.QueueOriginSequencer)
+	if vm.UsingOVM {
+		cfg := b.ChainConfig()
+		executionManager := cfg.StateDump.Accounts["OVM_ExecutionManager"]
+		stateManager := cfg.StateDump.Accounts["OVM_StateManager"]
+		block, err := b.BlockByNumber(ctx, rpc.BlockNumber(header.Number.Uint64()))
+		if err != nil {
+			return nil, 0, false, err
+		}
+		if block != nil {
+			txs := block.Transactions()
+			if header.Number.Uint64() != 0 {
+				if len(txs) != 1 {
+					return nil, 0, false, fmt.Errorf("block %d has more than 1 transaction", header.Number.Uint64())
+				}
+				tx := txs[0]
+				blockNumber = tx.L1BlockNumber()
+				timestamp = new(big.Int).SetUint64(tx.L1Timestamp())
+			}
+		}
 		msg, err = core.EncodeSimulatedMessage(msg, timestamp, blockNumber, executionManager, stateManager)
 		if err != nil {
 			return nil, 0, false, err
 		}
 	}
-
 	// Setup context so it may be cancelled the call has completed
 	// or, in case of unmetered gas, setup a context with a timeout.
 	var cancel context.CancelFunc
@@ -985,6 +935,7 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		<-ctx.Done()
 		evm.Cancel()
 	}()
+
 
 	// Setup the gas pool (also for unmetered requests)
 	// and apply the message.
@@ -1166,6 +1117,7 @@ func (s *PublicBlockChainAPI) EstimateExecutionGas(ctx context.Context, args Cal
 	}
 	return estimate, nil
 }
+
 
 // ExecutionResult groups all structured logs emitted by the EVM
 // while replaying a transaction in debug mode as well as transaction
@@ -1370,14 +1322,8 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		if meta.L1BlockNumber != nil {
 			result.L1BlockNumber = (*hexutil.Big)(meta.L1BlockNumber)
 		}
-		if meta.QueueOrigin != nil {
-			switch meta.QueueOrigin.Uint64() {
-			case uint64(types.QueueOriginSequencer):
-				result.QueueOrigin = "sequencer"
-			case uint64(types.QueueOriginL1ToL2):
-				result.QueueOrigin = "l1"
-			}
-		}
+
+		result.QueueOrigin = fmt.Sprint(meta.QueueOrigin)
 
 		if meta.Index != nil {
 			index := (hexutil.Uint64)(*meta.Index)
@@ -1386,15 +1332,6 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		if meta.QueueIndex != nil {
 			queueIndex := (hexutil.Uint64)(*meta.QueueIndex)
 			result.QueueIndex = &queueIndex
-		}
-
-		switch meta.SignatureHashType {
-		case types.SighashEthSign:
-			result.TxType = "EthSign"
-		case types.SighashEIP155:
-			result.TxType = "EIP155"
-		case types.CreateEOA:
-			result.TxType = "CreateEOA"
 		}
 	}
 	return result
@@ -1628,9 +1565,8 @@ type SendTxArgs struct {
 	Data  *hexutil.Bytes `json:"data"`
 	Input *hexutil.Bytes `json:"input"`
 
-	L1BlockNumber     *big.Int                `json:"l1BlockNumber"`
-	L1MessageSender   *common.Address         `json:"l1MessageSender"`
-	SignatureHashType types.SignatureHashType `json:"signatureHashType"`
+	L1BlockNumber   *big.Int        `json:"l1BlockNumber"`
+	L1MessageSender *common.Address `json:"l1MessageSender"`
 }
 
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
@@ -1703,13 +1639,13 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 	if args.To == nil {
 		tx := types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
 		raw, _ := rlp.EncodeToBytes(tx)
-		txMeta := types.NewTransactionMeta(args.L1BlockNumber, 0, nil, types.SighashEIP155, types.QueueOriginSequencer, nil, nil, raw)
+		txMeta := types.NewTransactionMeta(args.L1BlockNumber, 0, nil, types.QueueOriginSequencer, nil, nil, raw)
 		tx.SetTransactionMeta(txMeta)
 		return tx
 	}
 	tx := types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
 	raw, _ := rlp.EncodeToBytes(tx)
-	txMeta := types.NewTransactionMeta(args.L1BlockNumber, 0, args.L1MessageSender, args.SignatureHashType, types.QueueOriginSequencer, nil, nil, raw)
+	txMeta := types.NewTransactionMeta(args.L1BlockNumber, 0, args.L1MessageSender, types.QueueOriginSequencer, nil, nil, raw)
 	tx.SetTransactionMeta(txMeta)
 	return tx
 }
@@ -1806,7 +1742,7 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 		return common.Hash{}, err
 	}
 	// L1Timestamp and L1BlockNumber will be set right before execution
-	txMeta := types.NewTransactionMeta(nil, 0, nil, types.SighashEIP155, types.QueueOriginSequencer, nil, nil, encodedTx)
+	txMeta := types.NewTransactionMeta(nil, 0, nil, types.QueueOriginSequencer, nil, nil, encodedTx)
 	tx.SetTransactionMeta(txMeta)
 	return SubmitTransaction(ctx, s.b, tx)
 }
@@ -2005,6 +1941,27 @@ func (api *PublicRollupAPI) GetInfo(ctx context.Context) rollupInfo {
 	}
 }
 
+type gasPrices struct {
+	L1GasPrice *hexutil.Big `json:"l1GasPrice"`
+	L2GasPrice *hexutil.Big `json:"l2GasPrice"`
+}
+
+// GasPrices returns the L1 and L2 gas price known by the node
+func (api *PublicRollupAPI) GasPrices(ctx context.Context) (*gasPrices, error) {
+	l1GasPrice, err := api.b.SuggestL1GasPrice(ctx)
+	if err != nil {
+		return nil, err
+	}
+	l2GasPrice, err := api.b.SuggestL2GasPrice(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &gasPrices{
+		L1GasPrice: (*hexutil.Big)(l1GasPrice),
+		L2GasPrice: (*hexutil.Big)(l2GasPrice),
+	}, nil
+}
+
 // PrivatelRollupAPI provides private RPC methods to control the sequencer.
 // These methods can be abused by external users and must be considered insecure for use by untrusted users.
 type PrivateRollupAPI struct {
@@ -2163,7 +2120,6 @@ func (api *PrivateDebugAPI) IngestTransactions(txs []*RPCTransaction) error {
 		l1Timestamp := uint64(tx.L1Timestamp)
 		rawTransaction := tx.RawTransaction
 
-		sighashType := types.SighashEIP155
 		var queueOrigin types.QueueOrigin
 		switch tx.QueueOrigin {
 		case "sequencer":
@@ -2182,14 +2138,13 @@ func (api *PrivateDebugAPI) IngestTransactions(txs []*RPCTransaction) error {
 		}
 
 		meta := types.TransactionMeta{
-			L1BlockNumber:     l1BlockNumber,
-			L1Timestamp:       l1Timestamp,
-			L1MessageSender:   tx.L1TxOrigin,
-			SignatureHashType: sighashType,
-			QueueOrigin:       big.NewInt(int64(queueOrigin)),
-			Index:             (*uint64)(tx.Index),
-			QueueIndex:        (*uint64)(tx.QueueIndex),
-			RawTransaction:    rawTransaction,
+			L1BlockNumber:   l1BlockNumber,
+			L1Timestamp:     l1Timestamp,
+			L1MessageSender: tx.L1TxOrigin,
+			QueueOrigin:     queueOrigin,
+			Index:           (*uint64)(tx.Index),
+			QueueIndex:      (*uint64)(tx.QueueIndex),
+			RawTransaction:  rawTransaction,
 		}
 		transaction.SetTransactionMeta(&meta)
 		transactions[i] = transaction
