@@ -61,11 +61,9 @@ describe('Fees', () => {
       {
         name: 'zero-l2-gasprice',
         dataLen: 10,
-
         l1GasPrice: hundredBillion,
         l2GasPrice: 0,
         l2GasLimit: 196205,
-
       },
       {
         name: 'one-l2-gasprice',

@@ -230,8 +230,6 @@ export abstract class BatchSubmitter {
     }
   }
 
-
-
   protected async _submitAndLogTx(
     submitTransaction: () => Promise<TransactionReceipt>,
     successMessage: string
@@ -266,7 +264,6 @@ export abstract class BatchSubmitter {
     this.metrics.batchesSubmitted.inc()
     this.metrics.submissionGasUsed.observe(receipt.gasUsed.toNumber())
     this.metrics.submissionTimestamp.observe(Date.now())
-
     return receipt
   }
 

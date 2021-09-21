@@ -30,6 +30,7 @@ import { Math } from "@openzeppelin/contracts/math/Math.sol";
  * If the Sequencer does not include an enqueued transaction within the 'force inclusion period',
  * then any account may force it to be included by calling appendQueueBatch().
  *
+ * Compiler used: solc
  * Runtime target: EVM
  */
 contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_AddressResolver, MVM_AddressResolver {
@@ -1173,7 +1174,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
         require(
             _transaction.blockNumber        == _txChainElement.blockNumber
             && _transaction.timestamp       == _txChainElement.timestamp
-            && _transaction.entrypoint      == address(0)
+            && _transaction.entrypoint      == resolve("OVM_DecompressionPrecompileAddress")
             && _transaction.gasLimit        == gasLimit
             && _transaction.l1TxOrigin      == address(0)
             && _transaction.l1QueueOrigin   == Lib_OVMCodec.QueueOrigin.SEQUENCER_QUEUE

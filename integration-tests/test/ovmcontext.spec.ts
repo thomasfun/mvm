@@ -3,11 +3,11 @@ import { expect } from 'chai'
 /* Imports: External */
 import { ethers } from 'hardhat'
 import { injectL2Context } from '@eth-optimism/core-utils'
+import { Contract, BigNumber } from 'ethers'
 
 /* Imports: Internal */
 import { l2Provider, l1Provider, IS_LIVE_NETWORK } from './shared/utils'
 import { OptimismEnv } from './shared/env'
-import { Contract, ContractFactory, Wallet, BigNumber } from 'ethers'
 import { Direction } from './shared/watcher-utils'
 
 /**
@@ -48,20 +48,13 @@ describe('OVM Context: Layer 2 EVM Context', () => {
 
   it('enqueue: `block.number` and `block.timestamp` have L1 values', async () => {
     for (let i = 0; i < numTxs; i++) {
-      const l2Tip = await L2Provider.getBlock('latest')
       const tx = await env.l1Messenger.sendMessage(
         OVMContextStorage.address,
         '0x',
         2_000_000
       )
-      // Wait for the enqueue to be ingested
-      while (true) {
-        const tip = await L2Provider.getBlock('latest')
-        if (tip.number === l2Tip.number + 1) {
-          break
-        }
-        await sleep(500)
-      }
+      const receipt = await tx.wait()
+
       // Get the receipt
       // The transaction did not revert
       expect(receipt.status).to.equal(1)
@@ -70,28 +63,28 @@ describe('OVM Context: Layer 2 EVM Context', () => {
 
       // Get the L1 block that the enqueue transaction was in so that
       // the timestamp can be compared against the layer two contract
-      console.log("test1")
       const block = await l1Provider.getBlock(receipt.blockNumber)
-      console.log("test12")
 
       // The contact is a fallback function that keeps `block.number`
       // and `block.timestamp` in a mapping based on an index that
       // increments each time that there is a transaction.
       const blockNumber = await OVMContextStorage.blockNumbers(i)
       expect(receipt.blockNumber).to.deep.equal(blockNumber.toNumber())
-      console.log("test13")
       const timestamp = await OVMContextStorage.timestamps(i)
       expect(block.timestamp).to.deep.equal(timestamp.toNumber())
-      console.log("test14")
     }
   }).timeout(150000) // this specific test takes a while because it involves L1 to L2 txs
 
-  it.skip('should set correct OVM Context for `eth_call`', async () => {
-    const tip = await L2Provider.getBlockWithTransactions('latest')
-    const start = Math.max(0, tip.number - 5)
+  it('should set correct OVM Context for `eth_call`', async () => {
+    for (let i = 0; i < numTxs; i++) {
+      // Make an empty transaction to bump the latest block number.
+      const dummyTx = await env.l2Wallet.sendTransaction({
+        to: `0x${'11'.repeat(20)}`,
+        data: '0x',
+      })
+      await dummyTx.wait()
 
-    for (let i = start; i < tip.number; i++) {
-      const block = await L2Provider.getBlockWithTransactions(i)
+      const block = await L2Provider.getBlockWithTransactions('latest')
       const [, returnData] = await OVMMulticall.callStatic.aggregate(
         [
           [
@@ -123,7 +116,7 @@ describe('OVM Context: Layer 2 EVM Context', () => {
    * OVM context.
    */
 
-  it.skip('should return same timestamp and blocknumbers between `eth_call` and `rollup_getInfo`', async () => {
+  it('should return same timestamp and blocknumbers between `eth_call` and `rollup_getInfo`', async () => {
     // As atomically as possible, call `rollup_getInfo` and OVMMulticall for the
     // blocknumber and timestamp. If this is not atomic, then the sequencer can
     // happend to update the timestamp between the `eth_call` and the `rollup_getInfo`

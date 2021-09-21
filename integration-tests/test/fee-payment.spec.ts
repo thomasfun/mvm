@@ -2,21 +2,20 @@ import chai, { expect } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
 chai.use(chaiAsPromised)
 
-
 /* Imports: External */
 import { ethers, BigNumber, Contract, utils } from 'ethers'
 import { TxGasLimit, TxGasPrice } from '@eth-optimism/core-utils'
 import { predeploys, getContractInterface } from '@eth-optimism/contracts'
 
 /* Imports: Internal */
-import { OptimismEnv } from './shared/env'
 import { IS_LIVE_NETWORK } from './shared/utils'
+import { OptimismEnv } from './shared/env'
 import { Direction } from './shared/watcher-utils'
 
-
 describe('Fee Payment Integration Tests', async () => {
-  let env: OptimismEnv
   const other = '0x1234123412341234123412341234123412341234'
+
+  let env: OptimismEnv
   before(async () => {
     env = await OptimismEnv.new()
   })
@@ -33,7 +32,6 @@ describe('Fee Payment Integration Tests', async () => {
   it(`Should return a gasPrice of ${TxGasPrice.toString()} wei`, async () => {
     const gasPrice = await env.l2Wallet.getGasPrice()
     expect(gasPrice).to.deep.eq(TxGasPrice)
-
   })
 
   it('Should estimateGas with recoverable L2 gasLimit', async () => {
@@ -50,7 +48,6 @@ describe('Fee Payment Integration Tests', async () => {
       [tx, true]
     )
     const decoded = TxGasLimit.decode(gas)
-
     expect(BigNumber.from(executionGas)).deep.eq(decoded)
   })
 
@@ -62,9 +59,7 @@ describe('Fee Payment Integration Tests', async () => {
     )
     expect(balanceBefore.gt(amount))
 
-
     const tx = await env.ovmEth.transfer(other, amount)
-
     const receipt = await tx.wait()
     expect(receipt.status).to.eq(1)
 

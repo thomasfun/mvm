@@ -116,12 +116,12 @@ export const handleEventsSequencerBatchAppended: EventHandlerSet<
           batchIndex: extraData.batchIndex.toNumber(),
           blockNumber: BigNumber.from(context.blockNumber).toNumber(),
           timestamp: BigNumber.from(context.timestamp).toNumber(),
-          gasLimit: BigNumber.from(0).toString(),
-          target: constants.AddressZero,
+          gasLimit: BigNumber.from(extraData.gasLimit).toString(),
+          target: SEQUENCER_ENTRYPOINT_ADDRESS,
           origin: null,
           data: toHexString(sequencerTransaction),
           queueOrigin: 'sequencer',
-          value: decoded.value,
+          value: decoded ? decoded.value : '0x0',
           queueIndex: null,
           decoded,
           confirmed: true,
@@ -252,20 +252,24 @@ const parseSequencerBatchTransaction = (
 const decodeSequencerBatchTransaction = (
   transaction: Buffer,
   l2ChainId: number
-): DecodedSequencerBatchTransaction => {
-  const decodedTx = ethers.utils.parseTransaction(transaction)
+): DecodedSequencerBatchTransaction | null => {
+  try {
+    const decodedTx = ethers.utils.parseTransaction(transaction)
 
-  return {
-    nonce: BigNumber.from(decodedTx.nonce).toString(),
-    gasPrice: BigNumber.from(decodedTx.gasPrice).toString(),
-    gasLimit: BigNumber.from(decodedTx.gasLimit).toString(),
-    value: toRpcHexString(decodedTx.value),
-    target: decodedTx.to ? toHexString(decodedTx.to) : null,
-    data: toHexString(decodedTx.data),
-    sig: {
-      v: parseSignatureVParam(decodedTx.v, l2ChainId),
-      r: toHexString(decodedTx.r),
-      s: toHexString(decodedTx.s),
-    },
+    return {
+      nonce: BigNumber.from(decodedTx.nonce).toString(),
+      gasPrice: BigNumber.from(decodedTx.gasPrice).toString(),
+      gasLimit: BigNumber.from(decodedTx.gasLimit).toString(),
+      value: toRpcHexString(decodedTx.value),
+      target: toHexString(decodedTx.to), // Maybe null this out for creations?
+      data: toHexString(decodedTx.data),
+      sig: {
+        v: parseSignatureVParam(decodedTx.v, l2ChainId),
+        r: toHexString(decodedTx.r),
+        s: toHexString(decodedTx.s),
+      },
+    }
+  } catch (err) {
+    return null
   }
 }

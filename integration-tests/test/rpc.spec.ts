@@ -126,6 +126,31 @@ describe('Basic RPC tests', () => {
       )
     })
 
+    it('should reject a transaction with too low of a fee', async () => {
+      const tx = {
+        ...DEFAULT_TRANSACTION,
+        gasLimit: 1,
+        gasPrice: TxGasPrice,
+      }
+      const fee = tx.gasPrice.mul(tx.gasLimit)
+
+      await expect(env.l2Wallet.sendTransaction(tx)).to.be.rejectedWith(
+        `fee too low: ${fee}, use at least tx.gasLimit =`
+      )
+    })
+
+    it('should reject a transaction with an incorrect gas price', async () => {
+      const tx = {
+        ...DEFAULT_TRANSACTION,
+        gasLimit: 1,
+        gasPrice: TxGasPrice.sub(1),
+      }
+
+      await expect(env.l2Wallet.sendTransaction(tx)).to.be.rejectedWith(
+        `tx.gasPrice must be ${TxGasPrice.toString()}`
+      )
+    })
+
     it('should correctly report OOG for contract creations', async () => {
       const factory = await ethers.getContractFactory('TestOOGInConstructor')
 
@@ -166,6 +191,19 @@ describe('Basic RPC tests', () => {
           gasLimit: 1,
         })
       ).to.be.rejectedWith('out of gas')
+    })
+
+    it('should return the correct error message when attempting to deploy unsafe initcode', async () => {
+      // PUSH1 0x00 PUSH1 0x00 SSTORE
+      const unsafeCode = '0x6000600055'
+
+      await expect(
+        provider.call({
+          data: unsafeCode,
+        })
+      ).to.be.revertedWith(
+        'Contract creation code contains unsafe opcodes. Did you use the right compiler or pass an unsafe constructor argument?'
+      )
     })
 
     it('should allow eth_calls with nonzero value', async () => {
@@ -326,7 +364,15 @@ describe('Basic RPC tests', () => {
     })
   })
 
-  describe('eth_estimateGas', () => {
+  describe('eth_gasPrice', () => {
+    it('gas price should be the fee scalar', async () => {
+      expect(await provider.getGasPrice()).to.be.deep.equal(
+        TxGasPrice.toNumber()
+      )
+    })
+  })
+
+  describe('eth_estimateGas (returns the scaled fee)', () => {
     it('gas estimation is deterministic', async () => {
       let lastEstimate: BigNumber
       for (let i = 0; i < 10; i++) {
@@ -349,7 +395,40 @@ describe('Basic RPC tests', () => {
         value: 0,
       })
       // Expect gas to be less than or equal to the target plus 1%
-      expectApprox(estimate, 21000, { upperPercentDeviation: 1 })
+      expectApprox(estimate, 5920012, { upperPercentDeviation: 1 })
+    })
+
+    it('should return a gas estimate that grows with the size of data', async () => {
+      const dataLen = [0, 2, 8, 64, 256]
+      const l1GasPrice = await env.l1Wallet.provider.getGasPrice()
+
+      // Repeat this test for a series of possible transaction sizes.
+      for (const data of dataLen) {
+        const tx = {
+          to: '0x' + '1234'.repeat(10),
+          value: '0x0',
+          data: '0x' + '00'.repeat(data),
+          from: '0x' + '1234'.repeat(10),
+        }
+        const estimate = await l2Provider.estimateGas(tx)
+        const l2Gaslimit = await l2Provider.send('eth_estimateExecutionGas', [
+          tx,
+          true,
+        ])
+
+        const decoded = TxGasLimit.decode(estimate)
+        expect(decoded).to.deep.eq(BigNumber.from(l2Gaslimit))
+        expect(estimate.toString().endsWith(l2Gaslimit.toString()))
+
+        const l2GasPrice = await env.gasPriceOracle.gasPrice()
+        const expected = TxGasLimit.encode({
+          data: tx.data,
+          l1GasPrice,
+          l2GasLimit: BigNumber.from(l2Gaslimit),
+          l2GasPrice,
+        })
+        expect(expected).to.deep.eq(estimate)
+      }
     })
 
     it('should fail for a reverting call transaction', async () => {

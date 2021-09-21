@@ -31,7 +31,7 @@ export const loadProxyFromManager = async (
 export interface OptimismContracts {
   Lib_AddressManager: Contract
   OVM_StateCommitmentChain: Contract
-  OVM_CanonicalTransactionChain: Contract,
+  OVM_CanonicalTransactionChain: Contract
   OVM_ExecutionManager: Contract
 }
 

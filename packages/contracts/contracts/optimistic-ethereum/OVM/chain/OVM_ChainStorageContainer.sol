@@ -19,6 +19,7 @@ import { iOVM_ChainStorageContainer } from "../../iOVM/chain/iOVM_ChainStorageCo
  * 2. Stores queued transactions for the Canonical Transaction Chain
  * 3. Stores chain state batches for the State Commitment Chain
  *
+ * Compiler used: solc
  * Runtime target: EVM
  */
 contract OVM_ChainStorageContainer is iOVM_ChainStorageContainer, Lib_AddressResolver {
@@ -26,6 +27,7 @@ contract OVM_ChainStorageContainer is iOVM_ChainStorageContainer, Lib_AddressRes
     /*************
      * Libraries *
      *************/
+
     using Lib_Buffer for Lib_Buffer.Buffer;
 
     /**************

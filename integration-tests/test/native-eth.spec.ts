@@ -344,14 +344,21 @@ describe('Native ETH Integration Tests', async () => {
       expect(
         await env.l2Wallet.provider.getBalance(env.l2Wallet.address)
       ).to.equal(initialBalance)
-      expect(receipt.events.length).to.equal(2)
+      expect(receipt.events.length).to.equal(4)
 
-      const [transferEvent, depositEvent] = receipt.events
+      // The first transfer event is fee payment
+      const [, firstTransferEvent, secondTransferEvent, depositEvent] =
+        receipt.events
 
-      expect(transferEvent.event).to.equal('Transfer')
-      expect(transferEvent.args.from).to.equal(env.ovmEth.address)
-      expect(transferEvent.args.to).to.equal(env.l2Wallet.address)
-      expect(transferEvent.args.value).to.equal(value)
+      expect(firstTransferEvent.event).to.equal('Transfer')
+      expect(firstTransferEvent.args.from).to.equal(env.l2Wallet.address)
+      expect(firstTransferEvent.args.to).to.equal(env.ovmEth.address)
+      expect(firstTransferEvent.args.value).to.equal(value)
+
+      expect(secondTransferEvent.event).to.equal('Transfer')
+      expect(secondTransferEvent.args.from).to.equal(env.ovmEth.address)
+      expect(secondTransferEvent.args.to).to.equal(env.l2Wallet.address)
+      expect(secondTransferEvent.args.value).to.equal(value)
 
       expect(depositEvent.event).to.equal('Deposit')
       expect(depositEvent.args.dst).to.equal(env.l2Wallet.address)
@@ -377,9 +384,10 @@ describe('Native ETH Integration Tests', async () => {
       expect(
         await env.l2Wallet.provider.getBalance(env.l2Wallet.address)
       ).to.equal(initialBalance)
-      expect(receipt.events.length).to.equal(1)
+      expect(receipt.events.length).to.equal(2)
 
-      const depositEvent = receipt.events[0]
+      // The first transfer event is fee payment
+      const depositEvent = receipt.events[1]
       expect(depositEvent.event).to.equal('Withdrawal')
       expect(depositEvent.args.src).to.equal(env.l2Wallet.address)
       expect(depositEvent.args.wad).to.equal(value)

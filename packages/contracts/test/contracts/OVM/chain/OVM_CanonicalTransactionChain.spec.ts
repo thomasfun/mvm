@@ -82,7 +82,6 @@ const appendSequencerBatch = async (
   batch: AppendSequencerBatchParams
 ): Promise<TransactionResponse> => {
   const methodId = keccak256(Buffer.from('appendSequencerBatch()')).slice(2, 10)
-
   const calldata = encodeAppendSequencerBatch(batch)
   return OVM_CanonicalTransactionChain.signer.sendTransaction({
     to: OVM_CanonicalTransactionChain.address,
@@ -267,6 +266,12 @@ describe('OVM_CanonicalTransactionChain', () => {
   })
 
   describe('getQueueElement', () => {
+    it('should revert when accessing a non-existent element', async () => {
+      await expect(
+        OVM_CanonicalTransactionChain.getQueueElement(0)
+      ).to.be.revertedWith('Index out of bounds.')
+    })
+
     describe('when the requested element exists', () => {
       const target = NON_ZERO_ADDRESS
       const gasLimit = 500_000
@@ -794,6 +799,27 @@ describe('OVM_CanonicalTransactionChain', () => {
       const data = '0x' + '12'.repeat(1234)
 
       describe('when the sequencer attempts to add more queue transactions than exist', () => {
+        it('reverts when there are zero transactions in the queue', async () => {
+          const timestamp = await getEthTime(ethers.provider)
+          const blockNumber = (await getNextBlockNumber(ethers.provider)) - 1
+
+          await expect(
+            appendSequencerBatch(OVM_CanonicalTransactionChain, {
+              transactions: ['0x1234'],
+              contexts: [
+                {
+                  numSequencedTransactions: 1,
+                  numSubsequentQueueTransactions: 1,
+                  timestamp,
+                  blockNumber,
+                },
+              ],
+              shouldStartAtElement: 0,
+              totalElementsToAppend: 1,
+            })
+          ).to.be.revertedWith('Index out of bounds.')
+        })
+
         it('reverts when there are insufficient (but nonzero) transactions in the queue', async () => {
           const timestamp = await getEthTime(ethers.provider)
           const blockNumber = (await getNextBlockNumber(ethers.provider)) - 1

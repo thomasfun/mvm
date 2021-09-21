@@ -77,7 +77,6 @@ describe('Event Handlers: OVM_CanonicalTransactionChain.StateBatchAppended', () 
         l1TransactionHash:
           '0x4ca72484e93cdb50fe1089984db152258c2bbffc2534dcafbfe032b596bd5b49',
       }
-
       const input1: [any, StateBatchAppendedExtraData, number] = [
         event,
         extraData,
@@ -85,6 +84,7 @@ describe('Event Handlers: OVM_CanonicalTransactionChain.StateBatchAppended', () 
       ]
 
       const output1 = handleEventsStateBatchAppended.parseEvent(...input1)
+
       expect(output1.stateRootEntries.length).to.eq(
         event.args._batchSize.toNumber()
       )
@@ -95,6 +95,7 @@ describe('Event Handlers: OVM_CanonicalTransactionChain.StateBatchAppended', () 
         expect(entry.batchIndex).to.eq(event.args._batchIndex.toNumber())
         expect(entry.confirmed).to.be.true
       })
+
       const batchEntry = output1.stateRootBatchEntry
       expect(batchEntry.index).to.eq(event.args._batchIndex.toNumber())
       expect(batchEntry.blockNumber).to.eq(extraData.blockNumber)

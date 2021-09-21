@@ -88,15 +88,6 @@ const networks = {
       const etherscanUrl = `https://${escPrefix}etherscan.io/address/${deploymentInfo.address}`
       md += `|${colonizedName}|[${deploymentInfo.address}](${etherscanUrl})|\n`
     }
-    proxiedContracts = []
-    for (let i = 0; i < contracts.length; i++) {
-      if (contracts[i] === 'OVM_L1CrossDomainMessenger') {
-        proxiedContracts.push(contracts.splice(i, 1)[0])
-      }
-      if (contracts[i] === 'OVM_L1ETHGateway') {
-        proxiedContracts.push(contracts.splice(i, 1)[0])
-      }
-    }
 
     md += `<!--\nImplementation addresses. DO NOT use these addresses directly.\nUse their proxied counterparts seen above.\n\n`
 
