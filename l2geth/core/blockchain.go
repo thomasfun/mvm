@@ -81,7 +81,7 @@ const (
 	receiptsCacheLimit  = 32
 	txLookupCacheLimit  = 1024
 	maxFutureBlocks     = 256
-	maxTimeFutureBlocks = 30
+	maxTimeFutureBlocks = 3000
 	badBlockLimit       = 10
 	TriesInMemory       = 128
 
