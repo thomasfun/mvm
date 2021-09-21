@@ -75,10 +75,8 @@ type Message interface {
 	Nonce() uint64
 	CheckNonce() bool
 	Data() []byte
-
-	L1Timestamp() uint64
-	L1BlockNumber() *big.Int
 	L1MessageSender() *common.Address
+	L1BlockNumber() *big.Int
 	QueueOrigin() types.QueueOrigin
 
 	// NOTE 20210724
@@ -210,6 +208,7 @@ func (st *StateTransition) preCheck() error {
 	}
 	return st.buyGas()
 }
+
 // TransitionDb will transition the state by applying the current message and
 // returning the result including the used gas. It returns an error if failed.
 // An error indicates a consensus issue.
@@ -237,7 +236,6 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	istanbul := st.evm.ChainConfig().IsIstanbul(st.evm.BlockNumber)
 	contractCreation := msg.To() == nil
 
-	// Pay intrinsic gas
 	gas, err := IntrinsicGas(st.data, contractCreation, homestead, istanbul)
 	if err != nil {
 		return nil, 0, false, err
@@ -282,15 +280,12 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	}
 
 	if vmerr != nil {
-		log.Debug("VM returned with error", "err", vmerr, "ret", hexutil.Encode(ret))
-		// The only possible consensus-error would be if there wasn't
-		// sufficient balance to make the transfer happen. The first
-		// balance transfer may never fail.
 		if vmerr == vm.ErrInsufficientBalance {
 			return nil, 0, false, vmerr
 		}
 	}
 	st.refundGas()
+
 	if !vm.UsingOVM {
 		// Do not pay the gas to the coinbase address when running the OVM
 		st.state.AddBalance(evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))

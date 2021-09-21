@@ -15,7 +15,7 @@ var ZeroAddress = common.HexToAddress("0x000000000000000000000000000000000000000
 type ovmTransaction struct {
 	Timestamp     *big.Int       `json:"timestamp"`
 	BlockNumber   *big.Int       `json:"blockNumber"`
-	L1QueueOrigin types.QueueOrigin          `json:"l1QueueOrigin"`
+	L1QueueOrigin uint8          `json:"l1QueueOrigin"`
 	L1TxOrigin    common.Address `json:"l1TxOrigin"`
 	Entrypoint    common.Address `json:"entrypoint"`
 	GasLimit      *big.Int       `json:"gasLimit"`
@@ -26,7 +26,7 @@ func toExecutionManagerRun(evm *vm.EVM, msg Message) (Message, error) {
 	tx := ovmTransaction{
 		evm.Context.Time,
 		msg.L1BlockNumber(),
-		msg.QueueOrigin(),
+		uint8(msg.QueueOrigin()),
 		*msg.L1MessageSender(),
 		*msg.To(),
 		big.NewInt(int64(msg.Gas())),
@@ -39,7 +39,6 @@ func toExecutionManagerRun(evm *vm.EVM, msg Message) (Message, error) {
 		evm.Context.OvmStateManager.Address,
 	}
 
-	fmt.Println("Test: toExecutionManagerRun", args)
 	ret, err := abi.Pack("run", args...)
 	if err != nil {
 		return nil, err
@@ -109,7 +108,7 @@ func EncodeSimulatedMessage(msg Message, timestamp, blockNumber *big.Int, execut
 	tx := ovmTransaction{
 		timestamp,
 		blockNumber,
-		msg.QueueOrigin(),
+		uint8(msg.QueueOrigin()),
 		*msg.L1MessageSender(),
 		*to,
 		new(big.Int).SetUint64(msg.Gas()),

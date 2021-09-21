@@ -533,7 +533,6 @@ func TestSyncServiceL2GasPrice(t *testing.T) {
 	if err != nil {
 		t.Fatal("Cannot get state db")
 	}
-
 	l2GasPrice := big.NewInt(100000000000)
 	state.SetState(l2GasPriceOracleAddress, l2GasPriceSlot, common.BigToHash(l2GasPrice))
 	_, _ = state.Commit(false)

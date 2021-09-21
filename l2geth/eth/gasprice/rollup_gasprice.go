@@ -2,9 +2,10 @@ package gasprice
 
 import (
 	"context"
-	"github.com/MetisProtocol/l2geth/log"
 	"math/big"
 	"sync"
+
+	"github.com/MetisProtocol/l2geth/log"
 )
 
 // RollupOracle holds the L1 and L2 gas prices for fee calculation

@@ -334,9 +334,10 @@ func (c *Clique) verifyCascadingFields(chain consensus.ChainReader, header *type
 	// changes. The timestamp must be montonic, meaning that it can be the same
 	// or increase. L1 dictates the timestamp.
 	if !vm.UsingOVM {
-		if parent.Time + c.config.Period > header.Time {
+		if parent.Time+c.config.Period > header.Time {
 			return ErrInvalidTimestamp
 		}
+
 	}
 	// Retrieve the snapshot needed to verify this header and cache it
 	snap, err := c.snapshot(chain, number-1, header.ParentHash, parents)
@@ -644,9 +645,6 @@ func (c *Clique) Seal(chain consensus.ChainReader, block *types.Block, results c
 
 		log.Trace("Out-of-turn signing requested", "wiggle", common.PrettyDuration(wiggle))
 	}
-	// Set the delay to 0 when using the OVM so that blocks are always
-	// produced instantly. When running in a non-OVM network, the delay prevents
-	// the creation of invalid blocks.
 	if vm.UsingOVM {
 		delay = 0
 	}

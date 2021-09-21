@@ -32,7 +32,6 @@ import (
 	"github.com/MetisProtocol/l2geth/rlp"
 	"github.com/MetisProtocol/l2geth/trie"
 	"golang.org/x/crypto/sha3"
-
 )
 
 type revision struct {
@@ -58,7 +57,6 @@ func (n *proofList) Put(key []byte, value []byte) error {
 func (n *proofList) Delete(key []byte) error {
 	panic("not supported")
 }
-
 
 // StateDBs within the ethereum protocol are used to store anything
 // within the merkle trie. StateDBs take care of caching and storing
@@ -125,7 +123,6 @@ func New(root common.Hash, db Database) (*StateDB, error) {
 		journal:             newJournal(),
 	}, nil
 }
-
 
 // setError remembers the first non-nil error it is called with.
 func (s *StateDB) setError(err error) {

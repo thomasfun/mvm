@@ -539,7 +539,6 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 
 	// Ensure the transaction doesn't exceed the current block limit gas.
-
 	if vm.UsingOVM {
 		if pool.currentMaxGas < tx.L2Gas() {
 			return ErrGasLimit
@@ -574,8 +573,6 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	// cost == V + GP * GL
 	if vm.UsingOVM {
 		if pool.currentState.GetOVMBalance(from).Cmp(tx.Cost()) < 0 {
-			err := fmt.Errorf("Tx poop = %d,%d,%s,end", pool.currentState.GetOVMBalance(from), tx.Cost(), from)
-			log.Info("Tx_pool:", "error", err.Error())
 			return ErrInsufficientFunds
 		}
 	} else {
@@ -602,6 +599,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 // whitelisted, preventing any associated transaction from being dropped out of the pool
 // due to pricing constraints.
 func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err error) {
+	log.Debug("received tx", "gas", tx.Gas(), "gasprice", tx.GasPrice().Uint64())
 	// If the transaction is already known, discard it
 	hash := tx.Hash()
 	if pool.all.Get(hash) != nil {

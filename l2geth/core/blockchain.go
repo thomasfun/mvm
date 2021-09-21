@@ -81,7 +81,7 @@ const (
 	receiptsCacheLimit  = 32
 	txLookupCacheLimit  = 1024
 	maxFutureBlocks     = 256
-	maxTimeFutureBlocks = 300
+	maxTimeFutureBlocks = 30
 	badBlockLimit       = 10
 	TriesInMemory       = 128
 
@@ -1666,7 +1666,6 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 		}
 		// If the header is a banned one, straight out abort
 		if BadHashes[block.Hash()] {
-			log.Debug("Test: BadHashes", block.Hash())
 			bc.reportBlock(block, nil, ErrBlacklistedHash)
 			return it.index, ErrBlacklistedHash
 		}

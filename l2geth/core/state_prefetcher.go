@@ -17,8 +17,6 @@
 package core
 
 import (
-	"encoding/json"
-	"fmt"
 	"sync/atomic"
 
 	"github.com/MetisProtocol/l2geth/common"
@@ -74,25 +72,10 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 // the transaction successfully, rather to warm up touched data slots.
 func precacheTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gaspool *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, cfg vm.Config) error {
 	// Convert the transaction into an executable message and pre-cache its sender
-	var msg Message
-	var err error
-	meta_json, err := json.Marshal(tx.GetMeta())
-	data_json, err := json.Marshal(tx.Data())
-	fmt.Println("Test: precacheTransaction tx", string(meta_json), string(data_json))
-	// fmt.Println("Test: precacheTransaction", tx)
-	if !vm.UsingOVM {
-		msg, err = tx.AsMessage(types.MakeSigner(config, header.Number))
-		if err != nil {
-			return err
-		}
-	} else {
-		decompressor := config.StateDump.Accounts["OVM_SequencerEntrypoint"]
-		msg, err = AsOvmMessage(tx, types.MakeSigner(config, header.Number), decompressor.Address, header.GasLimit)
-		if err != nil {
-			return err
-		}
+	msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))
+	if err != nil {
+		return err
 	}
-
 	// Create the EVM and execute the transaction
 	context := NewEVMContext(msg, header, bc, author)
 	vm := vm.NewEVM(context, statedb, config, cfg)

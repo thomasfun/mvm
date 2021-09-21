@@ -324,10 +324,6 @@ func ReadBody(db ethdb.Reader, hash common.Hash, number uint64) *types.Body {
 
 // WriteBody stores a block body into the database.
 func WriteBody(db ethdb.KeyValueWriter, hash common.Hash, number uint64, body *types.Body) {
-	for i := 0; i < len(body.Transactions); i++ {
-		log.Debug("Test: WriteBody", "chainId", body.Transactions[i].ChainId())
-		log.Debug("Test: WriteBody", "meta L1Timestamp", body.Transactions[i].GetMeta().L1Timestamp, "L1MessageSender", body.Transactions[i].GetMeta().L1MessageSender, "Index", body.Transactions[i].GetMeta().Index)
-	}
 	data, err := rlp.EncodeToBytes(body)
 	if err != nil {
 		log.Crit("Failed to RLP encode body", "err", err)

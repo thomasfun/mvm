@@ -498,6 +498,7 @@ func (c *Client) GetLatestEthContext() (*EthContext, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Cannot fetch eth context: %w", err)
 	}
+
 	context, ok := response.Result().(*EthContext)
 	if !ok {
 		return nil, errors.New("Cannot parse EthContext")

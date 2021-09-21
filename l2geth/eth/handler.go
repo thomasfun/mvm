@@ -565,9 +565,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		for i, body := range request {
 			transactions[i] = body.Transactions
 			uncles[i] = body.Uncles
-			for j := 0; j < len(body.Transactions); j++ {
-				log.Debug("Test: BlockBodiesMsg", "chainId", body.Transactions[j].ChainId())
-			}
 		}
 		// Filter out any explicitly requested bodies, deliver the rest to the downloader
 		filter := len(transactions) > 0 || len(uncles) > 0
@@ -696,13 +693,11 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			log.Warn("Propagated block has invalid uncles", "have", hash, "exp", request.Block.UncleHash())
 			break // TODO(karalabe): return error eventually, but wait a few releases
 		}
-		// NOTE 20210724
 		if hash := types.DeriveSha(request.Block.Transactions()); hash != request.Block.TxHash() {
 			log.Warn("Propagated block has invalid body", "have", hash, "exp", request.Block.TxHash())
 			break // TODO(karalabe): return error eventually, but wait a few releases
 		}
 		if err := request.sanityCheck(); err != nil {
-			log.Warn("sanityCheck", err)
 			return err
 		}
 		request.Block.ReceivedAt = msg.ReceivedAt

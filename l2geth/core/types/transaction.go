@@ -105,7 +105,7 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 	}
 
 	meta := NewTransactionMeta(nil, 0, nil, QueueOriginSequencer, nil, nil, nil)
-	// index1 := uint64(0)
+
 	d := txdata{
 		AccountNonce: nonce,
 		Recipient:    to,
@@ -131,13 +131,6 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 	}
 
 	return &Transaction{data: d, meta: *meta}
-}
-
-func (t *Transaction) ResetPayload() {
-	if t.meta.RawTransaction == nil {
-		return
-	}
-	t.data.Payload = t.meta.RawTransaction
 }
 
 func (t *Transaction) SetTransactionMeta(meta *TransactionMeta) {
@@ -263,10 +256,9 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func (tx *Transaction) Data() []byte  { return common.CopyBytes(tx.data.Payload) }
-func (tx *Transaction) Gas() uint64   { return tx.data.GasLimit }
-func (tx *Transaction) L2Gas() uint64 { return fees.DecodeL2GasLimitU64(tx.data.GasLimit) }
-
+func (tx *Transaction) Data() []byte       { return common.CopyBytes(tx.data.Payload) }
+func (tx *Transaction) Gas() uint64        { return tx.data.GasLimit }
+func (tx *Transaction) L2Gas() uint64      { return fees.DecodeL2GasLimitU64(tx.data.GasLimit) }
 func (tx *Transaction) GasPrice() *big.Int { return new(big.Int).Set(tx.data.Price) }
 func (tx *Transaction) Value() *big.Int    { return new(big.Int).Set(tx.data.Amount) }
 func (tx *Transaction) Nonce() uint64      { return tx.data.AccountNonce }
@@ -415,6 +407,7 @@ func (tx *Transaction) AsMessage(s Signer) (Message, error) {
 		data:       tx.data.Payload,
 		checkNonce: true,
 
+		l1MessageSender: tx.meta.L1MessageSender,
 		l1BlockNumber:   tx.meta.L1BlockNumber,
 		queueOrigin:       tx.meta.QueueOrigin,
 
@@ -609,9 +602,7 @@ type Message struct {
 	queueOrigin     QueueOrigin
 }
 
-
 func NewMessage(from common.Address, to *common.Address, nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, checkNonce bool, l1MessageSender *common.Address, l1BlockNumber *big.Int, queueOrigin QueueOrigin) Message {
-	// index1 := uint64(0)
 	return Message{
 		from:       from,
 		to:         to,
@@ -665,8 +656,8 @@ func (m Message) Nonce() uint64        { return m.nonce }
 func (m Message) Data() []byte         { return m.data }
 func (m Message) CheckNonce() bool     { return m.checkNonce }
 
-func (m Message) L1BlockNumber() *big.Int          { return m.l1BlockNumber }
 func (m Message) L1MessageSender() *common.Address { return m.l1MessageSender }
+func (m Message) L1BlockNumber() *big.Int          { return m.l1BlockNumber }
 func (m Message) QueueOrigin() QueueOrigin         { return m.queueOrigin }
 
 // NOTE 20210724

@@ -310,7 +310,7 @@ func (s *SyncService) initializeLatestL1(ctcDeployHeight *big.Int) error {
 		s.SetLatestL1BlockNumber(context.BlockNumber)
 	} else {
 		log.Info("Found latest index", "index", *index)
-		block := s.bc.GetBlockByNumber(*index)
+		block := s.bc.GetBlockByNumber(*index + 1)
 		if block == nil {
 			block = s.bc.CurrentBlock()
 			blockNum := block.Number().Uint64()
@@ -341,7 +341,6 @@ func (s *SyncService) initializeLatestL1(ctcDeployHeight *big.Int) error {
 		// There are no enqueues yet
 		if errors.Is(err, errElementNotFound) {
 			return nil
-
 		}
 		// Other unexpected error
 		if err != nil {
@@ -400,7 +399,6 @@ func (s *SyncService) VerifierLoop() {
 		if err := s.updateGasPriceOracleCache(nil); err != nil {
 			log.Error("Cannot update L2 gas price", "msg", err)
 		}
-
 	}
 }
 
@@ -858,7 +856,6 @@ func (s *SyncService) verifyFee(tx *types.Transaction) error {
 	if tx.GasPrice().Cmp(fees.BigTxGasPrice) != 0 {
 		return fmt.Errorf("tx.gasPrice must be %d", fees.TxGasPrice)
 	}
-
 	l1GasPrice, err := s.RollupGpo.SuggestL1GasPrice(context.Background())
 	if err != nil {
 		return err
@@ -879,27 +876,18 @@ func (s *SyncService) verifyFee(tx *types.Transaction) error {
 
 	// Only count the calldata here as the overhead of the fully encoded
 	// RLP transaction is handled inside of EncodeL2GasLimit
-	fee := fees.EncodeTxGasLimit(tx.Data(), l1GasPrice, l2GasLimit, l2GasPrice)
+	expectedTxGasLimit := fees.EncodeTxGasLimit(tx.Data(), l1GasPrice, l2GasLimit, l2GasPrice)
 
 	// This should only happen if the unscaled transaction fee is greater than 18.44 ETH
-	if !fee.IsUint64() {
-		return fmt.Errorf("fee overflow: %s", fee.String())
-	}
-
-	// Compute the user's fee
-	paying := new(big.Int).Mul(new(big.Int).SetUint64(tx.Gas()), tx.GasPrice())
-
-	// Compute the minimum expected fee
-	expecting := new(big.Int).Mul(fee, fees.BigTxGasPrice)
-	if paying.Cmp(expecting) == -1 {
-		return fmt.Errorf("fee too low: %d, use at least tx.gasLimit = %d and tx.gasPrice = %d", paying, fee.Uint64(), fees.BigTxGasPrice)
+	if !expectedTxGasLimit.IsUint64() {
+		return fmt.Errorf("fee overflow: %s", expectedTxGasLimit.String())
 	}
 
 	userFee := new(big.Int).Mul(new(big.Int).SetUint64(tx.Gas()), tx.GasPrice())
-	expectedFee := new(big.Int).Mul(fee, fees.BigTxGasPrice)
+	expectedFee := new(big.Int).Mul(expectedTxGasLimit, fees.BigTxGasPrice)
 	opts := fees.PaysEnoughOpts{
 		UserFee:       userFee,
-		ExpectedFee:   expecting,
+		ExpectedFee:   expectedFee,
 		ThresholdUp:   s.feeThresholdUp,
 		ThresholdDown: s.feeThresholdDown,
 	}
@@ -907,7 +895,7 @@ func (s *SyncService) verifyFee(tx *types.Transaction) error {
 	if err := fees.PaysEnough(&opts); err != nil {
 		if errors.Is(err, fees.ErrFeeTooLow) {
 			return fmt.Errorf("%w: %d, use at least tx.gasLimit = %d and tx.gasPrice = %d",
-				fees.ErrFeeTooLow, userFee, fee, fees.BigTxGasPrice)
+				fees.ErrFeeTooLow, userFee, expectedTxGasLimit, fees.BigTxGasPrice)
 		}
 		if errors.Is(err, fees.ErrFeeTooHigh) {
 			return fmt.Errorf("%w: %d, use less than %d * %f", fees.ErrFeeTooHigh, userFee,
@@ -915,7 +903,6 @@ func (s *SyncService) verifyFee(tx *types.Transaction) error {
 		}
 		return err
 	}
-
 	return nil
 }
 
@@ -932,11 +919,9 @@ func (s *SyncService) ValidateAndApplySequencerTransaction(tx *types.Transaction
 	if err := s.verifyFee(tx); err != nil {
 		return err
 	}
-
 	s.txLock.Lock()
 	defer s.txLock.Unlock()
-	meta_json, _ := json.Marshal(tx.GetMeta())
-	log.Trace("Sequencer transaction validation", "hash", tx.Hash().Hex(), "meta", string(meta_json))
+	log.Trace("Sequencer transaction validation", "hash", tx.Hash().Hex())
 
 	qo := tx.QueueOrigin()
 	if qo != types.QueueOriginSequencer {

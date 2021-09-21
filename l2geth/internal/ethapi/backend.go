@@ -33,7 +33,6 @@ import (
 	"github.com/MetisProtocol/l2geth/event"
 	"github.com/MetisProtocol/l2geth/params"
 	"github.com/MetisProtocol/l2geth/rpc"
-
 )
 
 // Backend interface provides the common API services (that are provided by
