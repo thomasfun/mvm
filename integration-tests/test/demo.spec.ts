@@ -72,7 +72,7 @@ describe('Fee Payment Integration Tests', async () => {
     l1Wallet = system.l1Wallet
     l2Wallet = system.l2Wallet
 
-    const addressManagerAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+    const addressManagerAddress = "0xA193E42526F1FEA8C99AF609dcEabf30C1c29fAA"
     const addressManagerInterface = getContractInterface('Lib_AddressManager')
     AddressManager = new Contract(addressManagerAddress, addressManagerInterface, l1Provider)
     MVM_Coinbase = new Contract(
