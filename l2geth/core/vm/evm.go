@@ -117,20 +117,20 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
 	if UsingOVM {
 		// OVM_ENABLED
 		// Only log for non `eth_call`s
-		if evm.Context.EthCallSender == nil {
-			for name, account := range evm.chainConfig.StateDump.Accounts {
-				if contract.Address() == account.Address && name != "OVM_StateManager" {
-					abi := &(account.ABI)
-					method, err := abi.MethodById(input)
-					if err != nil {
-						log.Debug("Calling Known Contract Error", "Name", name, "Message", err, "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
-					} else {
-						log.Debug("Calling Known Contract", "Name", name, "Method", method.RawName, "Data", hexutil.Encode(input))
-					}
+		//if evm.Context.EthCallSender == nil {
+		for name, account := range evm.chainConfig.StateDump.Accounts {
+			if contract.Address() == account.Address && name != "OVM_StateManager" {
+				abi := &(account.ABI)
+				method, err := abi.MethodById(input)
+				if err != nil {
+					log.Debug("Calling Known Contract Error", "Name", name, "Message", err, "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
+				} else {
+					log.Debug("Calling Known Contract", "Name", name, "Method", method.RawName, "Data", hexutil.Encode(input))
 				}
 			}
-			//log.Debug("Calling contract", "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
 		}
+		//log.Debug("Calling contract", "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
+		//}
 
 		// Uncomment to make Safety checker always returns true.
 		// if contract.Address() == evm.Context.SafetyChecker.Address {
@@ -277,7 +277,7 @@ func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmCon
 		ctx.OvmStateManager = chainConfig.StateDump.Accounts["OVM_StateManager"]
 		ctx.OvmSafetyChecker = chainConfig.StateDump.Accounts["OVM_SafetyChecker"]
 		ctx.OvmL2CrossDomainMessenger = chainConfig.StateDump.Accounts["OVM_L2CrossDomainMessenger"]
-		ctx.OvmETH = chainConfig.StateDump.Accounts["OVM_ETH"]
+		ctx.OvmETH = chainConfig.StateDump.Accounts["MVM_Coinbase"]
 		ctx.OvmL2StandardBridge = chainConfig.StateDump.Accounts["OVM_L2StandardBridge"]
 	}
 

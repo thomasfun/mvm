@@ -108,8 +108,8 @@ const FINALIZATION_GAS = 1_200_000
 
   beforeEach(async () => {
     const depositAmount = utils.parseEther('100')
-    let postBalances = await getBalances()
-    console.log(postBalances.l1UserBalance + "," + postBalances.l2UserBalance + "," + postBalances.l1GatewayBalance + "," + postBalances.sequencerBalance)
+    // let postBalances = await getBalances()
+    // console.log(postBalances.l1UserBalance + "," + postBalances.l2UserBalance + "," + postBalances.l1GatewayBalance + "," + postBalances.sequencerBalance)
     const tx2 = await OVM_L1ETHGateway.depositETHByChainId(
       429, 
       FINALIZATION_GAS,
@@ -120,13 +120,13 @@ const FINALIZATION_GAS = 1_200_000
       gasPrice: 10500
     })
     const res = await tx2.wait()
-    postBalances = await getBalances()
-    console.log(postBalances.l1UserBalance + "," + postBalances.l2UserBalance + "," + postBalances.l1GatewayBalance + "," + postBalances.sequencerBalance)
+    // postBalances = await getBalances()
+    // console.log(postBalances.l1UserBalance + "," + postBalances.l2UserBalance + "," + postBalances.l1GatewayBalance + "," + postBalances.sequencerBalance)
   })
 
 
   it('Paying a nonzero but acceptable gasPrice fee', async () => {
-    const preBalances = await getBalances()
+    // const preBalances = await getBalances()
 
     // const gasPrice = BigNumber.from(15000000)
     // const gasLimit = BigNumber.from(167060000)
@@ -141,8 +141,8 @@ const FINALIZATION_GAS = 1_200_000
     //   }
     // )
     //await res.wait()
-    const postBalances = await getBalances()
-    console.log("l1 wallet balance:" + postBalances.l1UserBalance + ",l2 wallet balance" + postBalances.l2UserBalance + ",l1gateway balance" + postBalances.l1GatewayBalance + ",seq balance" + postBalances.sequencerBalance)
+    // const postBalances = await getBalances()
+    // console.log("l1 wallet balance:" + postBalances.l1UserBalance + ",l2 wallet balance" + postBalances.l2UserBalance + ",l1gateway balance" + postBalances.l1GatewayBalance + ",seq balance" + postBalances.sequencerBalance)
     const taxBalance = await MVM_Coinbase.balanceOf(l2Wallet.address)
     console.log("tax balance:"+taxBalance)
     // res = await MVM_Coinbase.withdraw(
@@ -161,9 +161,9 @@ const FINALIZATION_GAS = 1_200_000
     // expect(res.gasLimit.eq(gasLimit)).to.be.true
 
     // postBalances = await getBalances()
-    const feePaid = preBalances.l2UserBalance.sub(
-      postBalances.l2UserBalance
-    )
+    // const feePaid = preBalances.l2UserBalance.sub(
+    //   postBalances.l2UserBalance
+    // )
 
     // expect(
     //   feePaid.

@@ -652,7 +652,7 @@ func (w *worker) resultLoop() {
 				logs = append(logs, receipt.Logs...)
 			}
 			// Commit block and state to database.
-			block.RestTransactions()
+			//block.RestTransactions()
 			fmt.Println("Test: resultLoop", block.Transactions()[0])
 			_, err := w.chain.WriteBlockWithState(block, receipts, logs, task.state, true)
 			if err != nil {
