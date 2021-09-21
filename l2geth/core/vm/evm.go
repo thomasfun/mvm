@@ -123,9 +123,9 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
 					abi := &(account.ABI)
 					method, err := abi.MethodById(input)
 					if err != nil {
-						log.Debug("Calling Known Contract Error", "Name", name, "Message", err, "ID", evm.Id, "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
+						log.Debug("Calling Known Contract Error", "Name", name, "Message", err, "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
 					} else {
-						log.Debug("Calling Known Contract", "Name", name, "Method", method.RawName)
+						log.Debug("Calling Known Contract", "Name", name, "Method", method.RawName, "Data", hexutil.Encode(input))
 					}
 				}
 			}

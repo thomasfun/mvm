@@ -29,6 +29,7 @@ export const getEnvironment = async (): Promise<{
 
 
 const PROXY_SEQUENCER_ENTRYPOINT_ADDRESS = '0x4200000000000000000000000000000000000004'
+const MVM_Coinbase_Address = '0x4200000000000000000000000000000000000006'
 const TAX_ADDRESS = '0x1234123412341234123412341234123412341234'
 
 let l1Provider: JsonRpcProvider
@@ -76,12 +77,13 @@ describe('Fee Payment Integration Tests', async () => {
     const addressManagerInterface = getContractInterface('Lib_AddressManager')
     AddressManager = new Contract(addressManagerAddress, addressManagerInterface, l1Provider)
     MVM_Coinbase = new Contract(
-      predeploys.MVM_Coinbase,
+      MVM_Coinbase_Address,
       getContractInterface('MVM_Coinbase'),
       l2Wallet
     )
     console.log(
-      await MVM_Coinbase.l1Token(),
+      await l1Wallet.address,
+      await l2Wallet.address,
       await AddressManager.getAddress('Proxy__OVM_L1StandardBridge'),
       await AddressManager.getAddress('OVM_L2BatchMessageRelayer'))
     const l1StandardBridgeInterface = getContractInterface('iOVM_L1StandardBridge')
@@ -141,7 +143,7 @@ const FINALIZATION_GAS = 1_200_000
     //await res.wait()
     const postBalances = await getBalances()
     console.log("l1 wallet balance:" + postBalances.l1UserBalance + ",l2 wallet balance" + postBalances.l2UserBalance + ",l1gateway balance" + postBalances.l1GatewayBalance + ",seq balance" + postBalances.sequencerBalance)
-    const taxBalance = await MVM_Coinbase.balanceOf(TAX_ADDRESS)
+    const taxBalance = await MVM_Coinbase.balanceOf(l2Wallet.address)
     console.log("tax balance:"+taxBalance)
     // res = await MVM_Coinbase.withdraw(
     //   1000,

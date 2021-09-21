@@ -4,7 +4,7 @@
 # set -e
 
 RETRIES=${RETRIES:-40}
-VERBOSITY=${VERBOSITY:-6}
+VERBOSITY=${VERBOSITY:-20}
 
 if [[ ! -z "$URL" ]]; then
     # get the addrs from the URL provided
