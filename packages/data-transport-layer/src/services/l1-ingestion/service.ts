@@ -401,6 +401,7 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
           if (chainId && chainId !== 0) {
              db = await this.options.dbs.getTransportDbByChainId(chainId)
           }
+          await handlers.storeEvent(parsedEvent, db)
         }
 
         const tock = Date.now()
