@@ -255,8 +255,15 @@ contract OVM_L1CrossDomainMessenger is
             _message,
             nonce
         );
-
-        _sendXDomainMessageViaChainId(_chainId, xDomainCalldataRaw, _gasLimit);
+        
+        address l2CrossDomainMessenger = resolve("OVM_L2CrossDomainMessenger");
+        _sendXDomainMessageViaChainId(
+            _chainId,
+            ovmCanonicalTransactionChain,
+            l2CrossDomainMessenger,
+            xDomainCalldataRaw,
+            _gasLimit
+        );
         emit SentMessage(xDomainCalldataRaw);
     }
 
@@ -484,7 +491,7 @@ contract OVM_L1CrossDomainMessenger is
         address _target,
         address _sender,
         bytes memory _message,
-        uint256 _messageNonce,
+        uint256 _queueIndex,
         uint32 _gasLimit
     )
         override
@@ -524,7 +531,7 @@ contract OVM_L1CrossDomainMessenger is
             _target,
             _sender,
             _message,
-            _messageNonce
+            _queueIndex
         );
 
         _sendXDomainMessageViaChainId(
