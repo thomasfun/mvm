@@ -101,13 +101,18 @@ func EncodeSimulatedMessage(msg Message, timestamp, blockNumber *big.Int, execut
 		to = &common.Address{0}
 	}
 
+	value := msg.Value()
+	if value == nil {
+		value = common.Big0
+	}
+
 	tx := ovmTransaction{
 		timestamp,
 		blockNumber,
 		msg.QueueOrigin(),
 		*msg.L1MessageSender(),
 		*to,
-		big.NewInt(int64(msg.Gas())),
+		new(big.Int).SetUint64(msg.Gas()),
 		msg.Data(),
 	}
 
@@ -115,6 +120,7 @@ func EncodeSimulatedMessage(msg Message, timestamp, blockNumber *big.Int, execut
 	var args = []interface{}{
 		tx,
 		from,
+		value,
 		stateManager.Address,
 	}
 
