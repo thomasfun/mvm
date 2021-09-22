@@ -860,12 +860,35 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		data = []byte(*args.Data)
 	}
 
+	// Currently, the blocknumber and timestamp actually refer to the L1BlockNumber and L1Timestamp
+	// attached to each transaction. We need to modify the blocknumber and timestamp to reflect this,
+	// or else the result of `eth_call` will not be correct.
 	blockNumber := header.Number
-	timestamp := new(big.Int).SetUint64(header.Time)
+	timestamp :=  new(big.Int).SetUint64(header.Time)
+	if vm.UsingOVM {
+		block, err := b.BlockByNumber(ctx, rpc.BlockNumber(header.Number.Uint64()))
+		if err != nil {
+			return nil, 0, false, err
+		}
+		if block != nil {
+			txs := block.Transactions()
+			if header.Number.Uint64() != 0 {
+				if len(txs) != 1 {
+					return nil, 0, false, fmt.Errorf("block %d has more than 1 transaction", header.Number.Uint64())
+				}
+				tx := txs[0]
+				blockNumber = tx.L1BlockNumber()
+				timestamp = new(big.Int).SetUint64(tx.L1Timestamp())
+
+				// NOTE 20210724
+				// msg = types.NewMessage2(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, nil, types.QueueOriginSequencer, 0, tx.L1Timestamp(), tx.GetMeta().Index, tx.GetMeta().QueueIndex)
+			}
+		}
+	}
 
 	// Create new call message
 	var msg core.Message
-	msg = types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, nil, types.QueueOriginSequencer)
+	msg = types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, blockNumber, types.QueueOriginSequencer)
 	if vm.UsingOVM {
 		cfg := b.ChainConfig()
 		executionManager := cfg.StateDump.Accounts["OVM_ExecutionManager"]
