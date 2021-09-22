@@ -76,6 +76,11 @@ describe('Fee Payment Integration Tests', async () => {
     const addressManagerAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
     const addressManagerInterface = getContractInterface('Lib_AddressManager')
     AddressManager = new Contract(addressManagerAddress, addressManagerInterface, l1Provider)
+    const mvmAddressManagerAddress = "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+    const mvmAddressManagerInterface = getContractInterface('MVM_AddressManager')
+    const MvmAddressManager = new Contract(mvmAddressManagerAddress, mvmAddressManagerInterface, l1Provider)
+    
+    
     MVM_Coinbase = new Contract(
       MVM_Coinbase_Address,
       getContractInterface('MVM_Coinbase'),
@@ -84,6 +89,8 @@ describe('Fee Payment Integration Tests', async () => {
     console.log(
       await l1Wallet.address,
       await l2Wallet.address,
+      await MvmAddressManager.getAddress('429_MVM_Sequencer'),
+      await AddressManager.getAddress('429_MVM_Sequencer'),
       await AddressManager.getAddress('Proxy__OVM_L1StandardBridge'),
       await AddressManager.getAddress('OVM_L2BatchMessageRelayer'))
     const l1StandardBridgeInterface = getContractInterface('iOVM_L1StandardBridge')

@@ -276,12 +276,12 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
       },
       { concurrency: 100 }
     )
-
     // Fix our batches if we are configured to. TODO: Remove this.
     batch = await this._fixBatch(batch)
+    console.log(startBlock,endBlock,batch)
     if (!(await this._validateBatch(batch))) {
       this.metrics.malformedBatches.inc()
-      return
+      return [null,false]
     }
     let sequencerBatchParams = await this._getSequencerBatchParams(
       startBlock,
@@ -340,6 +340,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
           idx,
           ele,
         })
+        console.log("test2")
         return false
       }
       if (ele.blockNumber < lastBlockNumber) {
@@ -347,6 +348,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
           idx,
           ele,
         })
+        console.log("test31")
         return false
       }
       lastTimestamp = ele.timestamp
@@ -361,12 +363,12 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
   ): Promise<boolean> {
     const logEqualityError = (name, index, expected, got) => {
       this.logger.error('Observed mismatched values', {
+        name,
         index,
         expected,
         got,
       })
     }
-
     let isEqual = true
     const [
       queueEleHash,
@@ -376,10 +378,14 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
         this.l2ChainId,
         queueIndex
       )
+    console.log(queueEleHash,
+      timestamp,
+      blockNumber,
+      this.l2ChainId,
+        queueIndex)
     if(timestamp === 0 && blockNumber === 0) {
       return true
     }
-
     // TODO: Verify queue element hash equality. The queue element hash can be computed with:
     // keccak256( abi.encode( msg.sender, _target, _gasLimit, _data))
 

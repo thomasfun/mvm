@@ -71,10 +71,20 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 // and uses the input parameters for its environment. The goal is not to execute
 // the transaction successfully, rather to warm up touched data slots.
 func precacheTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gaspool *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, cfg vm.Config) error {
+	var msg Message
+	var err error
 	// Convert the transaction into an executable message and pre-cache its sender
-	msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))
-	if err != nil {
-		return err
+	if !vm.UsingOVM {
+		msg, err = tx.AsMessage(types.MakeSigner(config, header.Number))
+		if err != nil {
+			return err
+		}
+	} else {
+		decompressor := config.StateDump.Accounts["OVM_SequencerEntrypoint"]
+		msg, err = AsOvmMessage(tx, types.MakeSigner(config, header.Number), decompressor.Address, header.GasLimit)
+		if err != nil {
+			return err
+		}
 	}
 	// Create the EVM and execute the transaction
 	context := NewEVMContext(msg, header, bc, author)

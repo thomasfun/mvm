@@ -1595,9 +1595,10 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
                 numContexts           := shr(232, calldataload(add(ptrStart, 44)))
             }
 
+            string memory ch = makeChainSeq(_chainId);
             require(
-                msg.sender == resolve(makeChainSeq(_chainId)),
-                "Function can only be called by the Sequencer."
+                msg.sender == resolveFromMvm(ch),
+                "Function can only be called by the Sequencer for resolveFromMvm2."
             );
 
             require(
@@ -1824,10 +1825,11 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             shouldStartAtElement == getTotalElementsByChainId(_chainId),
             "Actual batch start index does not match expected start index."
         );
+        
         string memory ch = makeChainSeq(_chainId);
         require(
             msg.sender == resolveFromMvm(ch),
-            "Function can only be called by the Sequencer."
+            "Function can only be called by the Sequencer for resolveFromMvm."
         );
 
         require(

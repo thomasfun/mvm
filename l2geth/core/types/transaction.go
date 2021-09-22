@@ -376,7 +376,7 @@ func (tx *Transaction) AsMessage(s Signer) (Message, error) {
 		txMeta.QueueIndex = &qindex1
 		txMeta.RawTransaction = tx.data.Payload
 	} else {
-		txMeta.L1BlockNumber = big.NewInt(0)
+		//txMeta.L1BlockNumber = big.NewInt(0)
 		if &txMeta.L1Timestamp == nil {
 			txMeta.L1Timestamp = 0
 		}
