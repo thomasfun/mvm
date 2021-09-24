@@ -17,7 +17,7 @@ import { getContractFactory } from '@metis.io/contracts'
 
 
 /* Internal Imports */
-import { TxSubmissionHooks } from '..'
+import { TxSubmissionHooks } from '../utils/'
 
 export interface BlockRange {
   start: number
@@ -34,20 +34,6 @@ interface BatchSubmitterMetrics {
   failedSubmissions: Counter<string>
   malformedBatches: Counter<string>
 }
-
-const rejectOnTheseMessages = (err) => {
-  const errMsg = err.toString().toLowerCase();
-
-  const conditions = ["revert", "gas", "nonce", "invalid"];
-
-  for (const i of conditions) {
-   if (errMsg.includes(i)) {
-     return true;
-   }
-  }
-
-   return false;
-};
 
 export abstract class BatchSubmitter {
   protected rollupInfo: RollupInfo
@@ -95,10 +81,10 @@ export abstract class BatchSubmitter {
       return
     }
 
-    //this.logger.info('Readying to submit next batch...', {
-    //  l2ChainId: this.l2ChainId,
-    //  batchSubmitterAddress: await this.signer.getAddress(),
-    //})
+    this.logger.info('Readying to submit next batch...', {
+      l2ChainId: this.l2ChainId,
+      batchSubmitterAddress: await this.signer.getAddress(),
+    })
 
     if (this.syncing === true) {
       this.logger.info(

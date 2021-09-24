@@ -18,8 +18,8 @@ import {
 export class L1DataTransportClient {
   public _chainId:number
   constructor(private url: string) {this._chainId=0}
-
-  public setChainId(chainId:number) {
+  
+  public setChainId(chainId:number){
     this._chainId=chainId
   }
 

@@ -6,8 +6,8 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 var (

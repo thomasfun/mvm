@@ -1,15 +1,6 @@
 import { expect } from 'chai'
 
-import { Direction, waitForXDomainTransaction } from './watcher-utils'
-
-import {
-  getContractFactory,
-  getContractInterface,
-  predeploys
-} from '@metis.io/contracts'
-
-import { injectL2Context, remove0x, Watcher } from '@eth-optimism/core-utils'
-
+/* Imports: External */
 import {
   Contract,
   Wallet,
@@ -19,9 +10,17 @@ import {
   BigNumber,
   utils,
 } from 'ethers'
+import {
+  getContractFactory,
+  getContractInterface,
+  predeploys,
+} from '@eth-optimism/contracts'
+import { injectL2Context, remove0x, Watcher } from '@eth-optimism/core-utils'
 import { cleanEnv, str, num, bool } from 'envalid'
 import dotenv from 'dotenv'
 
+/* Imports: Internal */
+import { Direction, waitForXDomainTransaction } from './watcher-utils'
 
 export const GWEI = BigNumber.from(1e9)
 
@@ -119,7 +118,7 @@ export const getL2Bridge = async (wallet: Wallet) => {
 export const getOvmEth = (wallet: Wallet) => {
   const OVM_ETH = new Contract(
     OVM_ETH_ADDRESS,
-    getContractInterface('MVM_Coinbase'),
+    getContractInterface('OVM_ETH'),
     wallet
   )
 
@@ -149,7 +148,7 @@ export const encodeSolidityRevertMessage = (_reason: string): string => {
 
 export const DEFAULT_TRANSACTION = {
   to: '0x' + '1234'.repeat(10),
-  gasLimit: 8_000_000,
+  gasLimit: 33600000000001,
   gasPrice: 0,
   data: '0x',
   value: 0,

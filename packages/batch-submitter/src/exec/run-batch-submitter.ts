@@ -23,7 +23,7 @@ import {
   TransactionSubmitter,
   YnatmTransactionSubmitter,
   ResubmissionConfig,
-} from '../utils'
+} from '../utils/'
 
 interface RequiredEnvVars {
   // The HTTP provider URL for L1.

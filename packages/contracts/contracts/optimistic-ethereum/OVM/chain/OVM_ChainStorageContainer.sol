@@ -306,5 +306,4 @@ contract OVM_ChainStorageContainer is iOVM_ChainStorageContainer, Lib_AddressRes
             _globalMetadata
         );
     }
-
 }

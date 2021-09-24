@@ -99,8 +99,8 @@ const main = async () => {
   } else {
     throw new Error('Must pass one of L1_WALLET_KEY or MNEMONIC')
   }
-  let chainId = L2_NODE_CHAIN_ID
-  if(!chainId || chainId === 0) {
+  var chainId=L2_NODE_CHAIN_ID
+  if(!chainId || chainId==0){
     chainId = await l2Provider.send('eth_chainId', [])
   }
   const service = new MessageRelayerService({

@@ -29,19 +29,19 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/common/hexutil"
-	"github.com/MetisProtocol/l2geth/common/math"
-	"github.com/MetisProtocol/l2geth/core/rawdb"
-	"github.com/MetisProtocol/l2geth/core/state"
-	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/crypto"
-	"github.com/MetisProtocol/l2geth/ethdb"
-	"github.com/MetisProtocol/l2geth/log"
-	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rlp"
-	"github.com/MetisProtocol/l2geth/rollup/dump"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/rollup/dump"
 )
 
 //go:generate gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go
@@ -315,26 +315,6 @@ func ApplyOvmStateToState(statedb *state.StateDB, stateDump *dump.OvmDump, l1XDo
 		l1BridgeValue := common.BytesToHash(l1StandardBridgeAddress.Bytes())
 		statedb.SetState(OVM_L2StandardBridge.Address, l1BridgeSlot, l1BridgeValue)
 	}
-	// UsingMVM we are mvm not ovm, so we run mvm coinbase
-	// mvm is used for metis token
-	gateway := common.HexToAddress(os.Getenv("MVM_L1_STANDARD_BRIDGE_ADDRESS"))
-	MVM_Coinbase, ok := stateDump.Accounts["MVM_Coinbase"]
-	if ok {
-		log.Info("Setting OVM_L1ETHGateway in MVM_Coinbase", "address", gateway.Hex())
-		if strings.Contains(MVM_Coinbase.Code, "a84ce98") {
-			// Set the gateway of MVM_Coinbase at new dump
-			log.Info("Detected current MVM_Coinbase dump, setting slot 0x1 ")
-			l1GatewaySlot := common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001")
-			l1GatewayValue := common.BytesToHash(gateway.Bytes())
-			statedb.SetState(MVM_Coinbase.Address, l1GatewaySlot, l1GatewayValue)
-		} else {
-			// Set the gateway of MVM_Coinbase at legacy slot
-			log.Info("Detected legacy MVM_Coinbase dump, setting slot 0x8")
-			l1GatewaySlot := common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000008")
-			l1GatewayValue := common.BytesToHash(gateway.Bytes())
-			statedb.SetState(MVM_Coinbase.Address, l1GatewaySlot, l1GatewayValue)
-		}
-	}
 	gasOraclePrice, _ := new(big.Int).SetString(os.Getenv("MVM_GAS_ORACLE_PRICE"), 10)
 	gasOracleAddress := common.HexToAddress(os.Getenv("MVM_GAS_ORACLE_ADDRESS"))
 	MVM_GasOracle, ok := stateDump.Accounts["MVM_GasOracle"]
@@ -438,6 +418,7 @@ func (g *Genesis) Commit(db ethdb.Database) (*types.Block, error) {
 	if err := config.CheckConfigForkOrder(); err != nil {
 		return nil, err
 	}
+
 	rawdb.WriteTd(db, block.Hash(), block.NumberU64(), g.Difficulty)
 	rawdb.WriteBlock(db, block)
 	rawdb.WriteReceipts(db, block.Hash(), block.NumberU64(), nil)

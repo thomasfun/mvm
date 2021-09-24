@@ -3,6 +3,7 @@ import { DeployFunction } from 'hardhat-deploy/dist/types'
 
 /* Imports: Internal */
 import { getDeployedContract } from '../src/hardhat-deploy-ethers'
+import { predeploys } from '../src/predeploys'
 
 const deployFn: DeployFunction = async (hre) => {
   const { deploy } = hre.deployments
@@ -36,10 +37,7 @@ const deployFn: DeployFunction = async (hre) => {
     }
   )
 
-  await Lib_AddressManager.setAddress(
-    'Proxy__MVM_AddressManager',
-    result.address
-  )
+  await Lib_AddressManager.setAddress('Proxy__MVM_AddressManager', result.address)
 }
 
 deployFn.dependencies = ['Lib_AddressManager', 'MVM_AddressManager']

@@ -18,7 +18,3 @@ export const setProxyTarget = async (
 export const makeAddressManager = async (): Promise<Contract> => {
   return (await ethers.getContractFactory('Lib_AddressManager')).deploy()
 }
-
-export const makeMVMAddressManager = async (): Promise<Contract> => {
-  return (await ethers.getContractFactory('MVM_AddressManager')).deploy()
-}

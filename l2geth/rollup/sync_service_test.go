@@ -11,18 +11,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/consensus/ethash"
-	"github.com/MetisProtocol/l2geth/core"
-	"github.com/MetisProtocol/l2geth/core/rawdb"
-	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/crypto"
-	"github.com/MetisProtocol/l2geth/eth/gasprice"
-	"github.com/MetisProtocol/l2geth/ethdb"
-	"github.com/MetisProtocol/l2geth/event"
-	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rollup/fees"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/gasprice"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rollup/fees"
 )
 
 func setupLatestEthContextTest() (*SyncService, *EthContext) {
@@ -998,7 +998,6 @@ func (m *mockClient) SyncStatus(backend Backend) (*SyncStatus, error) {
 
 func (m *mockClient) GetL1GasPrice() (*big.Int, error) {
 	price := big.NewInt(1)
-
 	return price, nil
 }
 

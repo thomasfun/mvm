@@ -778,13 +778,6 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
         // per insertion, so to get the actual desired queue index
         // we need to multiply by 2.
         uint40 trueIndex = uint40(_index * 2);
-        if (_getQueueLength(_queueRef)==0){
-            return Lib_OVMCodec.QueueElement({
-                transactionHash: 0x0000000000000000000000000000000000000000000000000000000000000000,
-                timestamp: 0,
-                blockNumber: 0
-            });
-        }
         bytes32 transactionHash = _queueRef.get(trueIndex);
         bytes32 timestampAndBlockNumber = _queueRef.get(trueIndex + 1);
 
@@ -1851,7 +1844,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             "Not enough BatchContexts provided."
         );
 
-	    // Take a reference to the queue and its length so we don't have to keep resolving it.
+        // Take a reference to the queue and its length so we don't have to keep resolving it.
         // Length isn't going to change during the course of execution, so it's fine to simply
         // resolve this once at the start. Saves gas.
         d.queueRef = queue();
@@ -1885,7 +1878,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
 
 	    // Execute this check on every single batch, including the first one.
             _validateNextBatchContextByChainId(
-	    	    _chainId,
+	        _chainId,
                 curContext,
                 nextContext,
                 d.nextQueueIndex,
@@ -1900,8 +1893,13 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
                 assembly {
                     txDataLength := shr(232, calldataload(nextTransactionPtr))
                 }
-		        leaves[d.leafIndex] = _getSequencerLeafHashByChainId(
-		            _chainId,
+                require(
+                    txDataLength <= MAX_ROLLUP_TX_SIZE,
+                    "Transaction data size exceeds maximum for rollup transaction."
+                );
+
+		    leaves[d.leafIndex] = _getSequencerLeafHashByChainId(
+                    _chainId,
                     curContext,
                     nextTransactionPtr,
                     txDataLength,
@@ -1927,7 +1925,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
         }
 
         _validateFinalBatchContextByChainId(
-	        _chainId,
+	    _chainId,
             curContext,
             d.nextQueueIndex,
             d.queueLength,
@@ -1949,16 +1947,18 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
         uint40 blockTimestamp;
         uint40 blockNumber;
         if (curContext.numSubsequentQueueTransactions == 0) {
-            // The last element is a sequencer tx, therefore pull timestamp and block number from the last context.
+            // The last element is a sequencer tx, therefore pull timestamp and block number from
+            // the last context.
             blockTimestamp = uint40(curContext.timestamp);
             blockNumber = uint40(curContext.blockNumber);
         } else {
-            // The last element is a queue tx, therefore pull timestamp and block number from the queue element.
-            // curContext.numSubsequentQueueTransactions > 0 which means that we've processed at least one queue element.
-            // We increment nextQueueIndex after processing each queue element,
-            // so the index of the last element we processed is nextQueueIndex - 1.
+            // The last element is a queue tx, therefore pull timestamp and block number from the
+            // queue element.
+            // curContext.numSubsequentQueueTransactions > 0 which means that we've processed at
+            // least one queue element. We increment nextQueueIndex after processing each queue
+            // element, so the index of the last element we processed is nextQueueIndex - 1.
             Lib_OVMCodec.QueueElement memory lastElement = _getQueueElementByChainId(
-	    	    _chainId,
+	        _chainId,
                 d.nextQueueIndex-1,
                 d.queueRef
             );
@@ -1967,7 +1967,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             blockNumber = lastElement.blockNumber;
         }
 
-	    // For efficiency reasons getMerkleRoot modifies the `leaves` argument in place
+        // For efficiency reasons getMerkleRoot modifies the `leaves` argument in place
         // while calculating the root hash therefore any arguments passed to it must not
         // be used again afterwards
         _appendBatchByChainId(
@@ -2189,23 +2189,18 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
         // The underlying queue data structure stores 2 elements
         // per insertion, so to get the actual desired queue index
         // we need to multiply by 2.
-        if(_getQueueLengthByChainId(_chainId,_queueRef)==0){
-            return Lib_OVMCodec.QueueElement({
-                transactionHash: 0x0000000000000000000000000000000000000000000000000000000000000000,
-                timestamp: 0,
-                blockNumber: 0
-            });
-        }
         uint40 trueIndex = uint40(_index * 2);
         bytes32 transactionHash = _queueRef.getByChainId(_chainId,trueIndex);
         bytes32 timestampAndBlockNumber = _queueRef.getByChainId(_chainId,trueIndex + 1);
 
         uint40 elementTimestamp;
         uint40 elementBlockNumber;
+        // solhint-disable max-line-length
         assembly {
             elementTimestamp   :=         and(timestampAndBlockNumber, 0x000000000000000000000000000000000000000000000000000000FFFFFFFFFF)
             elementBlockNumber := shr(40, and(timestampAndBlockNumber, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0000000000))
         }
+        // solhint-enable max-line-length
 
         return Lib_OVMCodec.QueueElement({
             transactionHash: transactionHash,

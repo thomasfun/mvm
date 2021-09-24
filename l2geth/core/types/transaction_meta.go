@@ -9,7 +9,7 @@ import (
 	"encoding/binary"
 	"math/big"
 
-	"github.com/MetisProtocol/l2geth/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type QueueOrigin uint8

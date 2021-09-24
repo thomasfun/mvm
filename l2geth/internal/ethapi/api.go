@@ -25,27 +25,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MetisProtocol/l2geth/accounts"
-	"github.com/MetisProtocol/l2geth/accounts/abi"
-	"github.com/MetisProtocol/l2geth/accounts/keystore"
-	"github.com/MetisProtocol/l2geth/accounts/scwallet"
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/common/hexutil"
-	"github.com/MetisProtocol/l2geth/common/math"
-	"github.com/MetisProtocol/l2geth/consensus/clique"
-	"github.com/MetisProtocol/l2geth/consensus/ethash"
-	"github.com/MetisProtocol/l2geth/core"
-	"github.com/MetisProtocol/l2geth/core/rawdb"
-	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/crypto"
-	"github.com/MetisProtocol/l2geth/log"
-	"github.com/MetisProtocol/l2geth/p2p"
-	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rlp"
-	"github.com/MetisProtocol/l2geth/rollup/fees"
-	"github.com/MetisProtocol/l2geth/rpc"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/ethereum/go-ethereum/accounts"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/keystore"
+	"github.com/ethereum/go-ethereum/accounts/scwallet"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/consensus/clique"
+	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/rollup/fees"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tyler-smith/go-bip39"
 )
 
@@ -416,7 +416,7 @@ func (s *PrivateAccountAPI) SignTransaction(ctx context.Context, args SendTxArgs
 //
 // The key used to calculate the signature is decrypted with the given password.
 //
-// https://github.com/MetisProtocol/l2geth/wiki/Management-APIs#personal_sign
+// https://github.com/ethereum/go-ethereum/wiki/Management-APIs#personal_sign
 func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr common.Address, passwd string) (hexutil.Bytes, error) {
 	// Look up the wallet containing the requested signer
 	account := accounts.Account{Address: addr}
@@ -444,7 +444,7 @@ func (s *PrivateAccountAPI) Sign(ctx context.Context, data hexutil.Bytes, addr c
 // Note, the signature must conform to the secp256k1 curve R, S and V values, where
 // the V value must be 27 or 28 for legacy reasons.
 //
-// https://github.com/MetisProtocol/l2geth/wiki/Management-APIs#personal_ecRecover
+// https://github.com/ethereum/go-ethereum/wiki/Management-APIs#personal_ecRecover
 func (s *PrivateAccountAPI) EcRecover(ctx context.Context, data, sig hexutil.Bytes) (common.Address, error) {
 	if len(sig) != crypto.SignatureLength {
 		return common.Address{}, fmt.Errorf("signature must be %d bytes long", crypto.SignatureLength)
@@ -860,35 +860,12 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 		data = []byte(*args.Data)
 	}
 
-	// Currently, the blocknumber and timestamp actually refer to the L1BlockNumber and L1Timestamp
-	// attached to each transaction. We need to modify the blocknumber and timestamp to reflect this,
-	// or else the result of `eth_call` will not be correct.
 	blockNumber := header.Number
-	timestamp :=  new(big.Int).SetUint64(header.Time)
-	if vm.UsingOVM {
-		block, err := b.BlockByNumber(ctx, rpc.BlockNumber(header.Number.Uint64()))
-		if err != nil {
-			return nil, 0, false, err
-		}
-		if block != nil {
-			txs := block.Transactions()
-			if header.Number.Uint64() != 0 {
-				if len(txs) != 1 {
-					return nil, 0, false, fmt.Errorf("block %d has more than 1 transaction", header.Number.Uint64())
-				}
-				tx := txs[0]
-				blockNumber = tx.L1BlockNumber()
-				timestamp = new(big.Int).SetUint64(tx.L1Timestamp())
-
-				// NOTE 20210724
-				// msg = types.NewMessage2(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, nil, types.QueueOriginSequencer, 0, tx.L1Timestamp(), tx.GetMeta().Index, tx.GetMeta().QueueIndex)
-			}
-		}
-	}
+	timestamp := new(big.Int).SetUint64(header.Time)
 
 	// Create new call message
 	var msg core.Message
-	msg = types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, blockNumber, types.QueueOriginSequencer)
+	msg = types.NewMessage(addr, args.To, 0, value, gas, gasPrice, data, false, &addr, nil, types.QueueOriginSequencer)
 	if vm.UsingOVM {
 		cfg := b.ChainConfig()
 		executionManager := cfg.StateDump.Accounts["OVM_ExecutionManager"]

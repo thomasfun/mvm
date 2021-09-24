@@ -3,7 +3,7 @@ import { HardhatUserConfig } from 'hardhat/types'
 // Hardhat plugins
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
-import '@metis.io/hardhat-mvm'
+import '@eth-optimism/hardhat-ovm'
 import 'hardhat-gas-reporter'
 
 const enableGasReport = !!process.env.ENABLE_GAS_REPORT

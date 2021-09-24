@@ -1,5 +1,6 @@
 /* Imports: External */
 import { getContractFactory } from '@metis.io/contracts'
+//import { EventArgsStateBatchAppended } from '@eth-optimism/core-utils'
 import { BigNumber } from 'ethers'
 
 /* Imports: Internal */

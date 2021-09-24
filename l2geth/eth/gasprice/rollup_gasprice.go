@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/MetisProtocol/l2geth/log"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // RollupOracle holds the L1 and L2 gas prices for fee calculation

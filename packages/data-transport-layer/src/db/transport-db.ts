@@ -42,11 +42,11 @@ export class TransportDBMapHolder {
     this.dbPath = dbPath
     this.dbs={}
   }
-
-  public async getTransportDbByChainId(chainId):Promise<TransportDB> {
-    let db = this.dbs[chainId]
+  
+  public async getTransportDbByChainId(chainId):Promise<TransportDB>{
+    var db=this.dbs[chainId]
     if (!db) {
-      const leveldb = level(this.dbPath+"_"+chainId)
+      var leveldb = level(this.dbPath+"_"+chainId)
       await leveldb.open()
       db = new TransportDB(leveldb)
       this.dbs[chainId] = db

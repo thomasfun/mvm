@@ -3,8 +3,9 @@ package vm
 import (
 	"fmt"
 	"os"
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/crypto"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 var (

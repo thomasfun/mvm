@@ -21,9 +21,9 @@ import (
 	"hash"
 	"sync/atomic"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/common/math"
-	"github.com/MetisProtocol/l2geth/log"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // Config are the configuration options for the Interpreter

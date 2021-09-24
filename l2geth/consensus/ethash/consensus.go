@@ -24,15 +24,15 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/common/math"
-	"github.com/MetisProtocol/l2geth/consensus"
-	"github.com/MetisProtocol/l2geth/consensus/misc"
-	"github.com/MetisProtocol/l2geth/core/state"
-	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rlp"
 	mapset "github.com/deckarep/golang-set"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/consensus"
+	"github.com/ethereum/go-ethereum/consensus/misc"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -42,7 +42,7 @@ var (
 	ByzantiumBlockReward      = big.NewInt(3e+18) // Block reward in wei for successfully mining a block upward from Byzantium
 	ConstantinopleBlockReward = big.NewInt(2e+18) // Block reward in wei for successfully mining a block upward from Constantinople
 	maxUncles                 = 2                 // Maximum number of uncles allowed in a single block
-	allowedFutureBlockTime    = 150 * time.Second // Max time from current time allowed for blocks, before they're considered future blocks
+	allowedFutureBlockTime    = 15 * time.Second  // Max time from current time allowed for blocks, before they're considered future blocks
 
 	// calcDifficultyEip2384 is the difficulty adjustment algorithm as specified by EIP 2384.
 	// It offsets the bomb 4M blocks from Constantinople, so in total 9M blocks.

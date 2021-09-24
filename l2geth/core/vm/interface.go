@@ -19,8 +19,8 @@ package vm
 import (
 	"math/big"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/core/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 // StateDB is an EVM database for full state querying.

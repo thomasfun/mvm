@@ -16,7 +16,6 @@ import _ from 'lodash'
 /* Internal Imports */
 import {
   makeAddressManager,
-  makeMVMAddressManager,
   setProxyTarget,
   FORCE_INCLUSION_PERIOD_SECONDS,
   FORCE_INCLUSION_PERIOD_BLOCKS,
@@ -32,7 +31,6 @@ import { predeploys } from '../../../../src'
 
 const ELEMENT_TEST_SIZES = [1, 2, 4, 8, 16]
 const MAX_GAS_LIMIT = 8_000_000
-const L2_CHAIN_ID = 420
 
 const getQueueLeafHash = (index: number): string => {
   return keccak256(
@@ -97,7 +95,6 @@ describe('OVM_CanonicalTransactionChain', () => {
   })
 
   let AddressManager: Contract
-  let MVM_AddressManager: Contract
   let Mock__OVM_ExecutionManager: MockContract
   let Mock__OVM_StateCommitmentChain: MockContract
   before(async () => {
@@ -110,8 +107,6 @@ describe('OVM_CanonicalTransactionChain', () => {
       'OVM_DecompressionPrecompileAddress',
       predeploys.OVM_SequencerEntrypoint
     )
-
-    MVM_AddressManager = await makeMVMAddressManager()
 
     Mock__OVM_ExecutionManager = await smockit(
       await ethers.getContractFactory('OVM_ExecutionManager')
@@ -154,7 +149,6 @@ describe('OVM_CanonicalTransactionChain', () => {
   beforeEach(async () => {
     OVM_CanonicalTransactionChain =
       await Factory__OVM_CanonicalTransactionChain.deploy(
-        MVM_AddressManager.address,
         AddressManager.address,
         FORCE_INCLUSION_PERIOD_SECONDS,
         FORCE_INCLUSION_PERIOD_BLOCKS,
@@ -638,8 +632,7 @@ describe('OVM_CanonicalTransactionChain', () => {
       )
 
       expect(
-        await OVM_CanonicalTransactionChain.verifyTransactionByChainId(
-          L2_CHAIN_ID,
+        await OVM_CanonicalTransactionChain.verifyTransaction(
           {
             timestamp,
             blockNumber,
@@ -1361,7 +1354,7 @@ describe('OVM_CanonicalTransactionChain', () => {
                   OVM_CanonicalTransactionChain,
                   'SequencerBatchAppended'
                 )
-                .withArgs(L2_CHAIN_ID, 0, 0, size)
+                .withArgs(0, 0, size)
             })
           })
         })
@@ -1412,7 +1405,7 @@ describe('OVM_CanonicalTransactionChain', () => {
                   OVM_CanonicalTransactionChain,
                   'SequencerBatchAppended'
                 )
-                .withArgs(L2_CHAIN_ID, 0, size, size * 2)
+                .withArgs(0, size, size * 2)
             })
           })
 
@@ -1452,7 +1445,7 @@ describe('OVM_CanonicalTransactionChain', () => {
                   OVM_CanonicalTransactionChain,
                   'SequencerBatchAppended'
                 )
-                .withArgs(L2_CHAIN_ID, 0, spacing, size + spacing)
+                .withArgs(0, spacing, size + spacing)
             })
           })
         })

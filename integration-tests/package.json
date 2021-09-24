@@ -13,17 +13,17 @@
     "build:contracts": "hardhat compile",
     "build:contracts:ovm": "hardhat compile --network optimism",
     "test:integration": "hardhat --network optimism test",
-    "test:integration:live": "IS_LIVE_NETWORK=true hardhat --network optimism test",
+    "test:integration:live": "IS_LIVE_NETWORK=true hardhat --network optimism-live test",
     "test:sync": "hardhat --network optimism test sync-tests/*.spec.ts --no-compile",
-    "clean": "rimraf cache artifacts artifacts-ovm cache-ovm",
-    "test:l1l2": "hardhat --network optimism test test/demo.spec.ts"
+    "clean": "rimraf cache artifacts artifacts-ovm cache-ovm"
   },
   "devDependencies": {
-    "@metis.io/contracts": "^1.1.*",
-    "@metis.io/hardhat-mvm": "^0.2.5",
+    "@eth-optimism/contracts": "^0.4.10",
     "@eth-optimism/core-utils": "^0.5.2",
+    "@eth-optimism/hardhat-ovm": "^0.2.3",
     "@eth-optimism/message-relayer": "^0.1.11",
     "@ethersproject/providers": "^5.4.4",
+    "@metis.io/contracts": "^1.1.*",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@types/chai": "^4.2.17",
@@ -50,16 +50,11 @@
     "eslint-plugin-unicorn": "^32.0.1",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.4.5",
-    "hardhat": "^2.3.0",
+    "hardhat": "^2.2.1",
     "hardhat-gas-reporter": "^1.0.4",
     "mocha": "^8.3.1",
     "rimraf": "^3.0.2",
-    "typescript": "^4.2.3",
-    "shelljs": "^0.8.4"
-
-  },
-  "dependencies": {
-    "@eth-optimism/core-utils": "^0.5.1",
-    "hardhat": "^2.3.0"
+    "shelljs": "^0.8.4",
+    "typescript": "^4.2.3"
   }
 }

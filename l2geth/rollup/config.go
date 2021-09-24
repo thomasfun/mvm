@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/MetisProtocol/l2geth/common"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type Config struct {

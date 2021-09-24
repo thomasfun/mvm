@@ -21,12 +21,12 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/common/hexutil"
-	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/log"
-	"github.com/MetisProtocol/l2geth/params"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 var (
@@ -78,11 +78,6 @@ type Message interface {
 	L1MessageSender() *common.Address
 	L1BlockNumber() *big.Int
 	QueueOrigin() types.QueueOrigin
-
-	// NOTE 20210724
-	// L1Timestamp() uint64
-	// Index() *uint64
-	// QueueIndex() *uint64
 }
 
 // IntrinsicGas computes the 'intrinsic gas' for a message with the given data.

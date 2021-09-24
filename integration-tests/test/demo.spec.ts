@@ -10,20 +10,27 @@ import * as path from 'path';
 export const getEnvironment = async (): Promise<{
     l1Provider: JsonRpcProvider,
     l2Provider: JsonRpcProvider,
+    l2PeerProvider: JsonRpcProvider,
     l1Wallet: Wallet,
-    l2Wallet: Wallet
+    l2Wallet: Wallet,
+    l2PeerWallet: Wallet
 }> => {
     l1Provider = new JsonRpcProvider("http://localhost:9545")
     l2Provider = new JsonRpcProvider("http://localhost:8545")
+    l2PeerProvider = new JsonRpcProvider("http://localhost:10545")
+    
     l1Wallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", l1Provider)
     l2Wallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", l2Provider)
+    l2PeerWallet = new Wallet("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", l2PeerProvider)
 
 
     return {
         l1Provider,
         l2Provider,
+        l2PeerProvider,
         l1Wallet,
-        l2Wallet
+        l2Wallet,
+        l2PeerWallet
     }
 }
 
@@ -34,8 +41,10 @@ const TAX_ADDRESS = '0x1234123412341234123412341234123412341234'
 
 let l1Provider: JsonRpcProvider
 let l2Provider: JsonRpcProvider
+let l2PeerProvider: JsonRpcProvider
 let l1Wallet: Wallet
 let l2Wallet: Wallet
+let l2PeerWallet: Wallet
 let AddressManager: Contract
 let watcher: Watcher
 
@@ -45,6 +54,7 @@ describe('Fee Payment Integration Tests', async () => {
 
   let OVM_L1ETHGateway: Contract
   let MVM_Coinbase: Contract
+  let MVM_CoinbasePeer: Contract
   let OVM_L2CrossDomainMessenger: Contract
 
   const getBalances = async ():
@@ -70,8 +80,10 @@ describe('Fee Payment Integration Tests', async () => {
     const system = await getEnvironment()
     l1Provider = system.l1Provider
     l2Provider = system.l2Provider
+    l2PeerProvider = system.l2Provider
     l1Wallet = system.l1Wallet
     l2Wallet = system.l2Wallet
+    l2PeerWallet = system.l2Wallet
 
     const addressManagerAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
     const addressManagerInterface = getContractInterface('Lib_AddressManager')
@@ -85,6 +97,11 @@ describe('Fee Payment Integration Tests', async () => {
       MVM_Coinbase_Address,
       getContractInterface('MVM_Coinbase'),
       l2Wallet
+    )
+    MVM_CoinbasePeer = new Contract(
+      MVM_Coinbase_Address,
+      getContractInterface('MVM_Coinbase'),
+      l2PeerWallet
     )
     console.log(
       await l1Wallet.address,
@@ -111,7 +128,7 @@ const NON_NULL_BYTES32 =
   '0x1111111111111111111111111111111111111111111111111111111111111111'
 const NON_ZERO_ADDRESS = '0x1111111111111111111111111111111111111111'
 const INITIAL_TOTAL_L1_SUPPLY = 5000
-const FINALIZATION_GAS = 1_200_000
+const FINALIZATION_GAS = 3_200_000
 
   beforeEach(async () => {
     const depositAmount = utils.parseEther('100')
@@ -150,8 +167,13 @@ const FINALIZATION_GAS = 1_200_000
     //await res.wait()
     // const postBalances = await getBalances()
     // console.log("l1 wallet balance:" + postBalances.l1UserBalance + ",l2 wallet balance" + postBalances.l2UserBalance + ",l1gateway balance" + postBalances.l1GatewayBalance + ",seq balance" + postBalances.sequencerBalance)
+    
+    console.log("test")
     const taxBalance = await MVM_Coinbase.balanceOf(l2Wallet.address)
-    console.log("tax balance:"+taxBalance)
+    const taxBalancePeer = await MVM_CoinbasePeer.balanceOf(l2PeerWallet.address)
+    
+    console.log("test")
+    console.log("tax balance:"+taxBalance+","+taxBalancePeer)
     // res = await MVM_Coinbase.withdraw(
     //   1000,
     //   {

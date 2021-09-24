@@ -22,8 +22,8 @@ import (
 	"io"
 	"sort"
 
-	"github.com/MetisProtocol/l2geth/cmd/utils"
-	"github.com/MetisProtocol/l2geth/internal/debug"
+	"github.com/ethereum/go-ethereum/cmd/utils"
+	"github.com/ethereum/go-ethereum/internal/debug"
 	cli "gopkg.in/urfave/cli.v1"
 )
 

@@ -235,7 +235,7 @@ describe('Basic RPC tests', () => {
     it('correctly exposes revert data for contract calls', async () => {
       const req: TransactionRequest = {
         ...revertingTx,
-        gasLimit: 8_000_000, // override gas estimation
+        gasLimit: 5980899, // override gas estimation
       }
 
       const tx = await wallet.sendTransaction(req)
@@ -258,7 +258,7 @@ describe('Basic RPC tests', () => {
     it('correctly exposes revert data for contract creations', async () => {
       const req: TransactionRequest = {
         ...revertingDeployTx,
-        gasLimit: 8_000_000, // override gas estimation
+        gasLimit: 27700899, // override gas estimation
       }
 
       const tx = await wallet.sendTransaction(req)
@@ -442,8 +442,7 @@ describe('Basic RPC tests', () => {
     })
   })
 
-  // SKIP: ?
-  describe.skip('rollup_gasPrices', () => {
+  describe('rollup_gasPrices', () => {
     it('should return the L1 and L2 gas prices', async () => {
       const result = await provider.send('rollup_gasPrices', [])
       const l1GasPrice = await env.l1Wallet.provider.getGasPrice()

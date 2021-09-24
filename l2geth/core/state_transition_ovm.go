@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/rollup/dump"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/rollup/dump"
 )
 
 var ZeroAddress = common.HexToAddress("0x0000000000000000000000000000000000000000")
@@ -144,7 +144,6 @@ func modMessage(
 	data []byte,
 	gasLimit uint64,
 ) (Message, error) {
-	// NOTE 20210724
 	outmsg := types.NewMessage(
 		from,
 		to,
@@ -157,11 +156,6 @@ func modMessage(
 		msg.L1MessageSender(),
 		msg.L1BlockNumber(),
 		msg.QueueOrigin(),
-
-		// NOTE 20210724
-		// msg.L1Timestamp(),
-		// msg.Index(),
-		// msg.QueueIndex(),
 	)
 
 	return outmsg, nil

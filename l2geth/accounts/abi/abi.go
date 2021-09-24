@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/crypto"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // The ABI holds information about a contract's context and available
@@ -187,20 +187,6 @@ func (abi *ABI) MethodById(sigdata []byte) (*Method, error) {
 	// UsingOVM specific changes
 	// Use the method cache to prevent the need to iterate and hash
 	// each method in the ABI
-	// json_m, _ := json.Marshal(abi.Methods)
-	// json_mbi, _ := json.Marshal(abi.MethodsById)
-	// fmt.Println("Test: abi methods", string(json_m))
-	// fmt.Println("Test: abi methodsById", string(json_mbi))
-
-	// NOTE 20210724
-	// for mname, method := range abi.Methods {
-	// 	mid := method.ID()
-	// 	if sigdata[0] == mid[0] && sigdata[1] == mid[1] && sigdata[2] == mid[2] && sigdata[3] == mid[3] {
-	// 		fmt.Println("Test: method found", mname)
-	// 		return &method, nil
-	// 	}
-	// }
-	// return nil, fmt.Errorf("no method with id: %#x", sigdata[:4])
 	method, exist := abi.MethodsById[[4]byte{sigdata[0], sigdata[1], sigdata[2], sigdata[3]}]
 	if !exist {
 		return nil, fmt.Errorf("no method with id: %#x", sigdata[:4])

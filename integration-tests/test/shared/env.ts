@@ -1,8 +1,7 @@
-import { getContractFactory, predeploys } from '@metis.io/contracts'
 /* Imports: External */
 import { Contract, utils, Wallet } from 'ethers'
 import { TransactionResponse } from '@ethersproject/providers'
-
+import { getContractFactory, predeploys } from '@eth-optimism/contracts'
 import { Watcher } from '@eth-optimism/core-utils'
 import { getMessagesAndProofsForL2Transaction } from '@eth-optimism/message-relayer'
 

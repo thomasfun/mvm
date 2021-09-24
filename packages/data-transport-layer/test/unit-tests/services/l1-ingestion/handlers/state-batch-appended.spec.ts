@@ -53,13 +53,10 @@ describe('Event Handlers: OVM_CanonicalTransactionChain.StateBatchAppended', () 
   })
 
   describe('parseEvent', () => {
-    //no test data
-    it.skip('should have a ctcIndex equal to null', () => {
+    it('should have a ctcIndex equal to null', () => {
       // Source: https://etherscan.io/tx/0x4ca72484e93cdb50fe1089984db152258c2bbffc2534dcafbfe032b596bd5b49#eventlog
       const event = {
         args: {
-          _chainId: 420,
-          
           _batchIndex: BigNumber.from(144),
           _batchRoot:
             'AD2039C6E9A8EE58817252CF16AB720BF3ED20CC4B53184F5B11DE09639AA123',

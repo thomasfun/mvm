@@ -24,13 +24,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/MetisProtocol/l2geth/accounts/abi"
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/common/hexutil"
-	"github.com/MetisProtocol/l2geth/crypto"
-	"github.com/MetisProtocol/l2geth/log"
-	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rollup/dump"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rollup/dump"
 )
 
 // codec is a decoder for the return values of the execution manager. It decodes
@@ -121,15 +121,15 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
 		for name, account := range evm.chainConfig.StateDump.Accounts {
 			if contract.Address() == account.Address && name != "OVM_StateManager" {
 				abi := &(account.ABI)
-				method, err := abi.MethodById(input)
-				if err != nil {
-					log.Debug("Calling Known Contract Error", "Name", name, "Message", err, "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
-				} else {
-					log.Debug("Calling Known Contract", "Name", name, "Method", method.RawName, "Data", hexutil.Encode(input))
+				method, err2 := abi.MethodById(input)
+				if err2 == nil {
+					log.Debug("Calling Known Contract Start", "Name", name, "Method", method.RawName, "Address", contract.Address().Hex()) //, "Data", hexutil.Encode(input))
+					// } else {
+					// 	log.Debug("Calling Known Contract", "Name", name, "Method", method.RawName)
 				}
 			}
 		}
-		//log.Debug("Calling contract", "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
+		//log.Debug("Calling contract", "ID", evm.Id, "Address", contract.Address().Hex(), "Data", hexutil.Encode(input))
 		//}
 
 		// Uncomment to make Safety checker always returns true.
@@ -486,10 +486,22 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 					ret = []byte{}
 				}
 			}
-			if evm.Context.EthCallSender == nil {
-				log.Debug("Reached the end of an OVM execution", "Return Data", hexutil.Encode(ret), "Error", err)
+		}
+
+		//if evm.Context.EthCallSender == nil && err != nil {
+		for name, account := range evm.chainConfig.StateDump.Accounts {
+			if contract.Address() == account.Address && name != "OVM_StateManager" {
+				abi := &(account.ABI)
+				method, err2 := abi.MethodById(input)
+				if err2 == nil {
+					log.Debug("Calling Known Contract End", "Name", name, "Method", method.RawName, "Message", err, "Address", contract.Address().Hex()) //, "Data", hexutil.Encode(input))
+					//} else {
+					//	log.Debug("Calling Known Contract", "Name", name, "Method", method.RawName)
+				}
 			}
 		}
+		log.Debug("Reached the end of an OVM execution", "Error", err)
+		//}
 	}
 
 	return ret, contract.Gas, err

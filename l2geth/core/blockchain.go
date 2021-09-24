@@ -28,23 +28,22 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/MetisProtocol/l2geth/common"
-	"github.com/MetisProtocol/l2geth/common/mclock"
-	"github.com/MetisProtocol/l2geth/common/prque"
-	"github.com/MetisProtocol/l2geth/consensus"
-	"github.com/MetisProtocol/l2geth/core/rawdb"
-	"github.com/MetisProtocol/l2geth/core/state"
-	"github.com/MetisProtocol/l2geth/core/types"
-	"github.com/MetisProtocol/l2geth/core/vm"
-	"github.com/MetisProtocol/l2geth/ethdb"
-	"github.com/MetisProtocol/l2geth/event"
-	"github.com/MetisProtocol/l2geth/log"
-	"github.com/MetisProtocol/l2geth/metrics"
-	"github.com/MetisProtocol/l2geth/params"
-	"github.com/MetisProtocol/l2geth/rlp"
-	"github.com/MetisProtocol/l2geth/trie"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/mclock"
+	"github.com/ethereum/go-ethereum/common/prque"
+	"github.com/ethereum/go-ethereum/consensus"
+	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/event"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/trie"
 	lru "github.com/hashicorp/golang-lru"
-
 )
 
 var (
@@ -81,7 +80,7 @@ const (
 	receiptsCacheLimit  = 32
 	txLookupCacheLimit  = 1024
 	maxFutureBlocks     = 256
-	maxTimeFutureBlocks = 3000
+	maxTimeFutureBlocks = 300
 	badBlockLimit       = 10
 	TriesInMemory       = 128
 
@@ -1456,7 +1455,6 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 // accepted for future processing, and returns an error if the block is too far
 // ahead and was not added.
 func (bc *BlockChain) addFutureBlock(block *types.Block) error {
-	// NOTE 20210724
 	max := uint64(time.Now().Unix() + maxTimeFutureBlocks)
 	if block.Time() > max {
 		return fmt.Errorf("future block timestamp %v > allowed %v", block.Time(), max)
@@ -1542,7 +1540,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 	// Fire a single chain head event if we've progressed the chain
 	defer func() {
 		// NOTE 20210724
-		fmt.Println("Test: defer 1 in insertChain", lastCanon != nil, bc.CurrentBlock().Hash(), lastCanon.Hash())
+		//fmt.Println("Test: defer 1 in insertChain", lastCanon != nil, bc.CurrentBlock().Hash(), lastCanon.Hash())
 		if verifySeals {
 			bc.chainmu.Unlock()
 		}
@@ -1666,6 +1664,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 		}
 		// If the header is a banned one, straight out abort
 		if BadHashes[block.Hash()] {
+			log.Debug("Test: BadHashes", block.Hash())
 			bc.reportBlock(block, nil, ErrBlacklistedHash)
 			return it.index, ErrBlacklistedHash
 		}
@@ -1700,10 +1699,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 		if parent == nil {
 			parent = bc.GetHeader(block.ParentHash(), block.NumberU64()-1)
 		}
-
 		statedb, err := state.New(parent.Root, bc.stateCache)
-		// NOTE 20210724
-		log.Debug("Test: NewWithDiffDb", err)
 		if err != nil {
 			return it.index, err
 		}

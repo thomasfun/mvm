@@ -102,12 +102,14 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
     contracts: OptimismContracts
     l1RpcProvider: StaticJsonRpcProvider
     startingL1BlockNumber: number
+    l2ChainId: number
   } = {} as any
 
   protected async _init(): Promise<void> {
     this.state.db = new TransportDB(this.options.db)
     this.state.dbs = {}
     this.l1IngestionMetrics = registerMetrics(this.metrics)
+
     this.state.l1RpcProvider =
       typeof this.options.l1RpcProvider === 'string'
         ? new StaticJsonRpcProvider(this.options.l1RpcProvider)
@@ -151,6 +153,10 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
       this.state.l1RpcProvider,
       this.options.addressManager
     )
+
+    this.state.l2ChainId = ethers.BigNumber.from(
+      await this.state.contracts.OVM_ExecutionManager.ovmCHAINID()
+    ).toNumber()
 
     const startingL1BlockNumber = await this.state.db.getStartingL1Block()
     if (startingL1BlockNumber) {
@@ -388,19 +394,22 @@ export class L1IngestionService extends BaseService<L1IngestionServiceOptions> {
         const tick = Date.now()
 
         for (const event of events) {
-
           const extraData = await handlers.getExtraData(
             event,
             this.state.l1RpcProvider
           )
-          const parsedEvent = await handlers.parseEvent(event, extraData, this.options.l2ChainId)
-
-          // filter chainId
-          const chainId = event.args._chainId.toNumber()
-          let db = this.state.db
-          if (chainId && chainId !== 0) {
+          const parsedEvent = await handlers.parseEvent(
+            event,
+            extraData,
+            this.options.l2ChainId
+          )
+	  // filter chainId
+          var chainId = event.args._chainId.toNumber()
+          var db=this.state.db
+          if(chainId&&chainId!=0){
              db = await this.options.dbs.getTransportDbByChainId(chainId)
           }
+          
           await handlers.storeEvent(parsedEvent, db)
         }
 

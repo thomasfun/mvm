@@ -13,7 +13,6 @@ import _ from 'lodash'
 /* Internal Imports */
 import {
   makeAddressManager,
-  makeMVMAddressManager,
   setProxyTarget,
   FORCE_INCLUSION_PERIOD_SECONDS,
   FORCE_INCLUSION_PERIOD_BLOCKS,
@@ -47,7 +46,6 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
   })
 
   let AddressManager: Contract
-  let MVMAddressManager: Contract
   let Mock__OVM_ExecutionManager: MockContract
   let Mock__OVM_StateCommitmentChain: MockContract
   before(async () => {
@@ -60,8 +58,6 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
       'OVM_DecompressionPrecompileAddress',
       predeploys.OVM_SequencerEntrypoint
     )
-
-    MVMAddressManager = await makeMVMAddressManager()
 
     Mock__OVM_ExecutionManager = await smockit(
       await ethers.getContractFactory('OVM_ExecutionManager')
@@ -104,7 +100,6 @@ describe('[GAS BENCHMARK] OVM_CanonicalTransactionChain', () => {
   beforeEach(async () => {
     OVM_CanonicalTransactionChain =
       await Factory__OVM_CanonicalTransactionChain.deploy(
-        MVMAddressManager.address,
         AddressManager.address,
         FORCE_INCLUSION_PERIOD_SECONDS,
         FORCE_INCLUSION_PERIOD_BLOCKS,

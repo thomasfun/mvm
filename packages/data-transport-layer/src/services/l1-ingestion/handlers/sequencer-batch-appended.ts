@@ -104,7 +104,7 @@ export const handleEventsSequencerBatchAppended: EventHandlerSet<
           nextTxPointer
         )
 
-        const decoded = decodeSequencerBatchTransaction(
+        const decoded = maybeDecodeSequencerBatchTransaction(
           sequencerTransaction,
           event.args._chainId
         )
@@ -249,7 +249,7 @@ const parseSequencerBatchTransaction = (
   return calldata.slice(offset + 3, offset + 3 + transactionLength)
 }
 
-const decodeSequencerBatchTransaction = (
+const maybeDecodeSequencerBatchTransaction = (
   transaction: Buffer,
   l2ChainId: number
 ): DecodedSequencerBatchTransaction | null => {

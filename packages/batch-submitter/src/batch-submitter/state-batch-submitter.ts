@@ -13,7 +13,7 @@ import { Logger, Metrics } from '@eth-optimism/common-ts'
 
 /* Internal Imports */
 import { BlockRange, BatchSubmitter } from '.'
-import { TransactionSubmitter } from '../utils'
+import { TransactionSubmitter } from '../utils/'
 
 export class StateBatchSubmitter extends BatchSubmitter {
   // TODO: Change this so that we calculate start = scc.totalElements() and end = ctc.totalElements()!
@@ -117,13 +117,12 @@ export class StateBatchSubmitter extends BatchSubmitter {
     const startBlock: number =
       (await this.chainContract.getTotalElementsByChainId(this.l2ChainId)).toNumber() +
       this.blockOffset
-    //this.logger.info('Retrieved start block number from SCC', {
-    //  startBlock,
-    //})
+    this.logger.info('Retrieved start block number from SCC', {
+      startBlock,
+    })
 
     // We will submit state roots for txs which have been in the tx chain for a while.
-    const totalElements: number =
-      (await this.ctcContract.getTotalElementsByChainId(this.l2ChainId)).toNumber() + this.blockOffset
+    const totalElements: number = (await this.ctcContract.getTotalElementsByChainId(this.l2ChainId)).toNumber() + this.blockOffset
     //this.logger.info('Retrieved total elements from CTC', {
     //  totalElements,
     //})
@@ -139,9 +138,9 @@ export class StateBatchSubmitter extends BatchSubmitter {
           'State commitment chain is larger than transaction chain. This should never happen!'
         )
       }
-      //this.logger.info(
-      //  'No state commitments to submit. Skipping batch submission...'
-      //)
+      this.logger.info(
+        'No state commitments to submit. Skipping batch submission...'
+      )
       return
     }
     return {
@@ -172,9 +171,8 @@ export class StateBatchSubmitter extends BatchSubmitter {
     const offsetStartsAtIndex = startBlock - this.blockOffset
     this.logger.debug('Submitting batch.', { calldata })
 
-    const nonce = await this.signer.getTransactionCount()
-
     // Generate the transaction we will repeatedly submit
+    const nonce = await this.signer.getTransactionCount()
     const tx = await this.chainContract.populateTransaction.appendStateBatchByChainId(
       this.l2ChainId,
       batch,

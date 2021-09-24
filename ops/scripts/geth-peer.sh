@@ -14,7 +14,7 @@ if [[ ! -z "$URL" ]]; then
         VAR=$1
         export $VAR=$(echo $ADDRESSES | jq -r ".$2")
     }
-
+    
     # set all the necessary env vars
     envSet ETH1_ADDRESS_RESOLVER_ADDRESS  AddressManager
     envSet ETH1_L1_CROSS_DOMAIN_MESSENGER_ADDRESS Proxy__OVM_L1CrossDomainMessenger
@@ -25,9 +25,9 @@ if [[ ! -z "$URL" ]]; then
     if [ $ETH1_L1_STANDARD_BRIDGE_ADDRESS == null ]; then
         envSet ETH1_L1_STANDARD_BRIDGE_ADDRESS OVM_L1StandardBridge
     fi
-    envSet MVM_L1_STANDARD_BRIDGE_ADDRESS Proxy__OVM_Metis_L1StandardBridge
-    if [ $MVM_L1_STANDARD_BRIDGE_ADDRESS == null ]; then
-        envSet MVM_L1_STANDARD_BRIDGE_ADDRESS OVM_Metis_L1StandardBridge
+    envSet MVM_L1GATEWAY_ADDRESS Proxy__OVM_L1StandardBridge
+    if [ $ETH1_L1_ETH_GATEWAY_ADDRESS == null ]; then
+        envSet ETH1_L1_ETH_GATEWAY_ADDRESS OVM_L1ETHGateway
     fi
 fi
 

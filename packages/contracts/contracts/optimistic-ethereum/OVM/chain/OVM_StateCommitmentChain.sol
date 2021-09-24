@@ -421,12 +421,6 @@ contract OVM_StateCommitmentChain is iOVM_StateCommitmentChain, Lib_AddressResol
     {
         return Lib_OVMCodec.hashBatchHeader(_batchHeader) == batches().get(_batchHeader.batchIndex);
     }
-    
-    
-    
-    
-    
-    
     /**
      * @inheritdoc iOVM_StateCommitmentChain
      */
@@ -476,6 +470,7 @@ contract OVM_StateCommitmentChain is iOVM_StateCommitmentChain, Lib_AddressResol
         (, uint40 lastSequencerTimestamp) = _getBatchExtraDataByChainId(_chainId);
         return uint256(lastSequencerTimestamp);
     }
+    
     /**
      * @inheritdoc iOVM_StateCommitmentChain
      */
@@ -521,6 +516,7 @@ contract OVM_StateCommitmentChain is iOVM_StateCommitmentChain, Lib_AddressResol
             );
         }
     }
+    
     /**
      * @inheritdoc iOVM_StateCommitmentChain
      */
@@ -652,7 +648,6 @@ contract OVM_StateCommitmentChain is iOVM_StateCommitmentChain, Lib_AddressResol
         );
         return SafeMath.add(timestamp, FRAUD_PROOF_WINDOW) > block.timestamp;
     }
-
 
     /**********************
      * Internal Functions *

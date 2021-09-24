@@ -68,7 +68,13 @@ export const makeContractDeployConfig = async (
     }
     return res
   }
-
+  
+  const sequencer = config.transactionChainConfig.sequencer
+  const sequencerAddress =
+    typeof sequencer === 'string'
+      ? sequencer
+      : await sequencer.getAddress()
+      
   return {
     OVM_L2CrossDomainMessenger: {
       factory: getContractFactory('OVM_L2CrossDomainMessenger'),
@@ -140,11 +146,6 @@ export const makeContractDeployConfig = async (
         config.ovmGasMeteringConfig.maxTransactionGasLimit,
       ],
       afterDeploy: async (): Promise<void> => {
-        const sequencer = config.transactionChainConfig.sequencer
-        const sequencerAddress =
-          typeof sequencer === 'string'
-            ? sequencer
-            : await sequencer.getAddress()
         await _sendTx(
           AddressManager.setAddress(
             'OVM_DecompressionPrecompileAddress',
@@ -229,6 +230,19 @@ export const makeContractDeployConfig = async (
     MVM_Coinbase: {
       factory: getContractFactory('MVM_Coinbase'),
       params: [],
+    },
+
+    MVM_GasOracle: {
+      factory: getContractFactory('MVM_GasOracle'),
+      params: [
+        (() => {
+          if (typeof config.gasPriceOracleConfig.owner !== 'string') {
+            return config.gasPriceOracleConfig.owner.getAddress()
+          }
+          return config.gasPriceOracleConfig.owner
+        })(),
+        config.gasPriceOracleConfig.initialGasPrice,
+      ],
     },
     OVM_ETH: {
       factory: getContractFactory('OVM_ETH'),

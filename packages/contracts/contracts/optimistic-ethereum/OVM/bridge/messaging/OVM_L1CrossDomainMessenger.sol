@@ -216,7 +216,6 @@ contract OVM_L1CrossDomainMessenger is
             xDomainCalldata,
             _gasLimit
         );
-
         emit SentMessage(xDomainCalldata);
     }
 
@@ -501,7 +500,7 @@ contract OVM_L1CrossDomainMessenger is
         // Verify that the message is in the queue:
         address canonicalTransactionChain = resolve("OVM_CanonicalTransactionChain");
         Lib_OVMCodec.QueueElement memory element =
-            iOVM_CanonicalTransactionChain(canonicalTransactionChain).getQueueElement(_queueIndex);
+            iOVM_CanonicalTransactionChain(canonicalTransactionChain).getQueueElementByChainId(_chainId, _queueIndex);
 
         address l2CrossDomainMessenger = resolve("OVM_L2CrossDomainMessenger");
         // Compute the transactionHash
