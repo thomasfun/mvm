@@ -9,7 +9,7 @@ services:
     build:
       context: ..
       dockerfile: ./ops/docker/Dockerfile.monorepo
-  
+
   deployer:
     image: ethereumoptimism/deployer
     build:
@@ -77,7 +77,7 @@ services:
     ports:
       - ${L2GETH_HTTP_PORT:-8545}:8545
       - ${L2GETH_WS_PORT:-8546}:8546
-  
+
   l2geth-peer:
     depends_on:
       - l2geth
@@ -106,7 +106,7 @@ services:
       - ${L2GETH_HTTP_PORT:-10545}:8545
       - ${L2GETH_WS_PORT:-10546}:8546
       - ${L2GETH_NODE_PORT:-30304}:30303
-  
+
   relayer:
     depends_on:
       - deployer
@@ -125,6 +125,8 @@ services:
         RETRIES: 60
         POLLING_INTERVAL: 500
         GET_LOGS_INTERVAL: 500
+        USE_CHAIN_STORE: "false"
+        STORE_DB_URL: ""
 
   batch_submitter:
     depends_on:
