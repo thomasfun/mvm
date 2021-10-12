@@ -5,6 +5,13 @@ if [ -n "$1"  ]
 then
     region=$1
 fi
+
+stack="metis-dev"
+if [ -n "$2" ]
+then
+    stack=$2
+fi
+
 # --no-cache
 echo 'Building metis_l2_geth image'
 cp ./efs-utils.conf ./settings/efs-utils.conf
@@ -20,14 +27,14 @@ login="docker login --username AWS --password-stdin 615305719720.dkr.ecr.$region
 $profile | $login
 
 echo 'Pushing metis_l2_geth'
-l2geth="docker tag metis_l2_geth:latest 615305719720.dkr.ecr.$region.amazonaws.com/metis-l2-geth:latest"
+l2geth="docker tag metis_l2_geth:latest 615305719720.dkr.ecr.$region.amazonaws.com/$stack-l2-geth:latest"
 $l2geth
-l2geth_push="docker push  615305719720.dkr.ecr.$region.amazonaws.com/metis-l2-geth:latest"
+l2geth_push="docker push  615305719720.dkr.ecr.$region.amazonaws.com/$stack-l2-geth:latest"
 $l2geth_push
 
 echo 'Pushing data-transport-layer'
-dtl="docker tag ethereumoptimism/data-transport-layer:latest 615305719720.dkr.ecr.$region.amazonaws.com/metis-dtl:latest"
+dtl="docker tag ethereumoptimism/data-transport-layer:latest 615305719720.dkr.ecr.$region.amazonaws.com/$stack-dtl:latest"
 $dtl
-dtl_push="docker push 615305719720.dkr.ecr.$region.amazonaws.com/metis-dtl:latest"
+dtl_push="docker push 615305719720.dkr.ecr.$region.amazonaws.com/$stack-dtl:latest"
 $dtl_push
 

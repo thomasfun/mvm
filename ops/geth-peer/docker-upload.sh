@@ -15,11 +15,11 @@ cmd="sed -i s#$region#REGION_VAR_FOR_ENV#g ./settings/efs-utils.conf"
 $cmd
 
 profile="aws --profile default ecr get-login-password --region $region"
-login="docker login --username AWS --password-stdin 950087689901.dkr.ecr.$region.amazonaws.com"
+login="docker login --username AWS --password-stdin 615305719720.dkr.ecr.$region.amazonaws.com"
 $profile | $login
 
 echo 'Pushing metis_l2_geth_peer'
-l2geth="docker tag metis_l2_geth_peer:latest 950087689901.dkr.ecr.$region.amazonaws.com/metis-l2-geth-peer:latest"
+l2geth="docker tag metis_l2_geth_peer:latest 615305719720.dkr.ecr.$region.amazonaws.com/metis-l2-geth-peer:latest"
 $l2geth
-l2geth_push="docker push 950087689901.dkr.ecr.$region.amazonaws.com/metis-l2-geth-peer:latest"
+l2geth_push="docker push 615305719720.dkr.ecr.$region.amazonaws.com/metis-l2-geth-peer:latest"
 $l2geth_push
