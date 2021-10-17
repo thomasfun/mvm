@@ -521,8 +521,6 @@ export class MessageRelayerService extends BaseService<MessageRelayerOptions> {
       return fromHexString(element)
     })
     
-    this.logger.info('Got elements', { leaves })
-
     const tree = new MerkleTree(leaves, hash)
     const index =
       message.parentTransactionIndex - header.batch.prevTotalElements.toNumber()
