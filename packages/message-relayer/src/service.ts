@@ -494,15 +494,11 @@ export class MessageRelayerService extends BaseService<MessageRelayerOptions> {
           .slice(2)
           .replace(/^0+/, ''),
     ])
-    this.logger.info('Got proof header', { proof })
-    
 
     // TODO: Complain if the batch doesn't exist.
     const header = await this._getStateBatchHeader(
       message.parentTransactionIndex
     )
-    this.logger.info('Got message', { message })
-    this.logger.info('Got header', { header })
 
     const elements = []
     for (
@@ -517,8 +513,6 @@ export class MessageRelayerService extends BaseService<MessageRelayerOptions> {
       }
     }
     
-    this.logger.info('Got elements', { elements })
-
     const hash = (el: Buffer | string): Buffer => {
       return Buffer.from(ethers.utils.keccak256(el).slice(2), 'hex')
     }
