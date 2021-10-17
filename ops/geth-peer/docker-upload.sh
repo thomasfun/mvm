@@ -6,7 +6,7 @@ then
     region=$1
 fi
 
-stack="metis-dev"
+stack="metis"
 if [ -n "$2" ]
 then
     stack=$2
