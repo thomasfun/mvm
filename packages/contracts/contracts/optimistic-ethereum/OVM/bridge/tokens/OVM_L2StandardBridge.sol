@@ -15,6 +15,8 @@ import { Lib_PredeployAddresses } from "../../../libraries/constants/Lib_Predepl
 /* Contract Imports */
 import { IL2StandardERC20 } from "../../../libraries/standards/IL2StandardERC20.sol";
 
+import { MVM_GasOracle } from "../../../MVM/MVM_GasOracle.sol";
+
 /**
  * @title OVM_L2StandardBridge
  * @dev The L2 Standard bridge is a contract which works together with the L1 Standard bridge to
@@ -133,6 +135,12 @@ contract OVM_L2StandardBridge is iOVM_L2ERC20Bridge, OVM_CrossDomainEnabled {
     )
         internal
     {
+    
+        uint256 minL1Gas = MVM_GasOracle(Lib_PredeployAddresses.MVM_GAS_ORACLE).minL1GasLimit();
+        if (_l1Gas < minL1Gas) {
+           _l1Gas = uint32(minL1Gas);
+        }
+        
         // When a withdrawal is initiated, we burn the withdrawer's funds to prevent subsequent L2
         // usage
         IL2StandardERC20(_l2Token).burn(msg.sender, _amount);
@@ -143,7 +151,8 @@ contract OVM_L2StandardBridge is iOVM_L2ERC20Bridge, OVM_CrossDomainEnabled {
 
         if (_l2Token == Lib_PredeployAddresses.OVM_ETH) {
             message = abi.encodeWithSelector(
-                        iOVM_L1StandardBridge.finalizeETHWithdrawal.selector,
+                        iOVM_L1StandardBridge.finalizeETHWithdrawalByChainId.selector,
+                        getChainID(),
                         _from,
                         _to,
                         _amount,

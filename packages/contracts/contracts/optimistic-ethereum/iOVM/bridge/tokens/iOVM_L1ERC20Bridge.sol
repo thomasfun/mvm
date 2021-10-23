@@ -28,6 +28,8 @@ interface iOVM_L1ERC20Bridge {
         uint256 _amount,
         bytes _data
     );
+    
+    event ERC20ChainID(uint256 _chainid);
 
     /********************
      * Public Functions *

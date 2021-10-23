@@ -22,8 +22,10 @@ contract OVM_DeployerWhitelist is iOVM_DeployerWhitelist {
 
     bool public initialized;
     bool public allowArbitraryDeployment;
+    bool public allowAllXDomainSenders;
     address override public owner;
     mapping (address => bool) public whitelist;
+    mapping (address => bool) public xDomainWL;
 
 
     /**********************
@@ -53,7 +55,8 @@ contract OVM_DeployerWhitelist is iOVM_DeployerWhitelist {
      */
     function initialize(
         address _owner,
-        bool _allowArbitraryDeployment
+        bool _allowArbitraryDeployment,
+        bool _allowAllXDomainSenders
     )
         override
         external
@@ -81,6 +84,17 @@ contract OVM_DeployerWhitelist is iOVM_DeployerWhitelist {
         onlyOwner
     {
         whitelist[_deployer] = _isWhitelisted;
+    }
+    
+    function setWhitelistedXDomainSender(
+        address _sender,
+        bool _isWhitelisted
+    )
+        override
+        external
+        onlyOwner
+    {
+        xDomainWL[_sender] = _isWhitelisted;
     }
 
     /**
@@ -110,6 +124,16 @@ contract OVM_DeployerWhitelist is iOVM_DeployerWhitelist {
     {
         allowArbitraryDeployment = _allowArbitraryDeployment;
     }
+    
+    function setAllowAllXDomainSenders(
+        bool _allowAllXDomainSenders
+    )
+        override
+        public
+        onlyOwner
+    {
+        allowAllXDomainSenders = _allowAllXDomainSenders;
+    }
 
     /**
      * Permanently enables arbitrary contract deployment and deletes the owner.
@@ -120,6 +144,15 @@ contract OVM_DeployerWhitelist is iOVM_DeployerWhitelist {
         onlyOwner
     {
         setAllowArbitraryDeployment(true);
+        setOwner(address(0));
+    }
+    
+    function enableAllXDomainSenders()
+        override
+        external
+        onlyOwner
+    {
+        setAllowAllXDomainSenders(true);
         setOwner(address(0));
     }
 
@@ -141,6 +174,22 @@ contract OVM_DeployerWhitelist is iOVM_DeployerWhitelist {
             initialized == false
             || allowArbitraryDeployment == true
             || whitelist[_deployer]
+        );
+    }
+    
+    function isXDomainSenderAllowed(
+        address _sender
+    )
+        override
+        external
+        returns (
+            bool
+        )
+    {
+        return (
+            initialized == false
+            || allowAllXDomainSenders == true
+            || xDomainWL[_sender]
         );
     }
 }

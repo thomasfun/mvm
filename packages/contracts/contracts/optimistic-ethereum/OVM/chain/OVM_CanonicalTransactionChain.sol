@@ -284,6 +284,11 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
             _gasLimit >= MIN_ROLLUP_TX_GAS,
             "Transaction gas limit too low to enqueue."
         );
+        
+        uint256 minL2Gas = MVM_DiscountOracle(resolve('MVM_DiscountOracle')).minL2Gas();
+        if (_gasLimit < minL2Gas) {
+           _gasLimit = minL2Gas;
+        }
 
         // We need to consume some amount of L1 gas in order to rate limit transactions going into
         // L2. However, L2 is cheaper than L1 so we only need to burn some small proportion of the

@@ -35,6 +35,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
 
     address public override l2TokenBridge;
     address public metis;
+    uint256 public DefaultChainId = 1088;
 
     // Maps L1 token to chainid to L2 token to balance of the L1 token deposited
     mapping(address => mapping (uint256 => mapping (address => uint256))) public deposits;
@@ -216,7 +217,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
             message
         );
 
-        emit ETHDepositInitiated(_from, _to, msg.value, _data);
+        emit ETHDepositInitiated(_from, _to, msg.value, _data, DefaultChainId);
     }
 
     function _initiateETHDepositByChainId(
@@ -248,7 +249,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
             message
         );
 
-        emit ETHDepositInitiated(_from, _to, msg.value, _data);
+        emit ETHDepositInitiated(_from, _to, msg.value, _data, _chainId);
     }
     
     /**
@@ -266,7 +267,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         virtual
         onlyEOA()
     {
-        _initiateERC20DepositByChainId(420, _l1Token, _l2Token, msg.sender, msg.sender, _amount, _l2Gas, _data);
+        _initiateERC20DepositByChainId(DefaultChainId, _l1Token, _l2Token, msg.sender, msg.sender, _amount, _l2Gas, _data);
     }
 
      /**
@@ -284,7 +285,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         override
         virtual
     {
-        _initiateERC20DepositByChainId(420, _l1Token, _l2Token, msg.sender, _to, _amount, _l2Gas, _data);
+        _initiateERC20DepositByChainId(DefaultChainId, _l1Token, _l2Token, msg.sender, _to, _amount, _l2Gas, _data);
     }
     
     /**
@@ -360,24 +361,33 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
             _amount
         );
         
-        address source;
+        bytes memory message;
         if (_l1Token == metis) {
-            source = address(0);
-            _l2Token = Lib_PredeployAddresses.MVM_COINBASE;
-        } else {
-            source = _l1Token;
-        }
-        // Construct calldata for finalizeDeposit call
-        bytes memory message =
+            // Construct calldata for finalizeDeposit call
+          message =
             abi.encodeWithSelector(
                 iOVM_L2ERC20Bridge.finalizeDeposit.selector,
-                source,
+                address(0),
+                Lib_PredeployAddresses.MVM_COINBASE,
+                _from,
+                _to,
+                _amount,
+                _data
+            );
+            
+        } else {
+          // Construct calldata for finalizeDeposit call
+          message =
+            abi.encodeWithSelector(
+                iOVM_L2ERC20Bridge.finalizeDeposit.selector,
+                _l1Token,
                 _l2Token,
                 _from,
                 _to,
                 _amount,
                 _data
             );
+        }
 
         // Send calldata into L2
         sendCrossDomainMessageViaChainId(
@@ -390,6 +400,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         deposits[_l1Token][_chainId][_l2Token] = deposits[_l1Token][_chainId][_l2Token].add(_amount);
 
         emit ERC20DepositInitiated(_l1Token, _l2Token, _from, _to, _amount, _data);
+        emit ERC20ChainID(_chainId);
     }
 
     /*************************
@@ -412,7 +423,27 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         (bool success, ) = _to.call{value: _amount}(new bytes(0));
         require(success, "TransferHelper::safeTransferETH: ETH transfer failed");
 
-        emit ETHWithdrawalFinalized(_from, _to, _amount, _data);
+        emit ETHWithdrawalFinalized(_from, _to, _amount, _data, DefaultChainId);
+    }
+    
+    /**
+     * @inheritdoc iOVM_L1StandardBridge
+     */
+    function finalizeETHWithdrawalByChainId(
+        uint256 _chainid,
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata _data
+    )
+        external
+        override
+        onlyFromCrossDomainAccount(l2TokenBridge)
+    {
+        (bool success, ) = _to.call{value: _amount}(new bytes(0));
+        require(success, "TransferHelper::safeTransferETH: ETH transfer failed");
+
+        emit ETHWithdrawalFinalized(_from, _to, _amount, _data, _chainid);
     }
     
     /**
@@ -447,7 +478,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         override
         onlyFromCrossDomainAccount(l2TokenBridge)
     {
-        _finalizeERC20WithdrawalByChainId(420, _l1Token, _l2Token, _from, _to, _amount, _data);
+        _finalizeERC20WithdrawalByChainId(DefaultChainId, _l1Token, _l2Token, _from, _to, _amount, _data);
     }
     
     /**
@@ -486,10 +517,11 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         IERC20(_l1Token).safeTransfer(_to, _amount);
 
         emit ERC20WithdrawalFinalized(_l1Token, _l2Token, _from, _to, _amount, _data);
+        emit ERC20ChainID(_chainid);
     }
 
     /*****************************
-     * Temporary - Migrating ETH *
+     * Temporary - Migrating ETH and ERC*
      *****************************/
 
     /**
@@ -499,4 +531,5 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
      * old contract
      */
     function donateETH() external payable {}
+    function transferToken(address l1token) external {}
 }

@@ -6,22 +6,33 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 contract MVM_DiscountOracle is Ownable{
     // Current l2 gas price
     uint256 public discount;
+    uint256 public minL2Gas;
 
     constructor(
       uint256 _initialDiscount
     )
       Ownable() 
     {
-      set(_initialDiscount);
+      setDiscount(_initialDiscount);
+      setMinL2Gas(1_000_000);
     }
 
-    function set(
+    function setDiscount(
         uint256 _discount
     )
         public
         onlyOwner
     {
         discount = _discount;
+    }
+    
+    function setMinL2Gas(
+        uint256 _minL2Gas
+    )
+        public
+        onlyOwner
+    {
+        minL2Gas = _minL2Gas;
     }
 
     function transferSetter(address newsetter) public onlyOwner{
