@@ -74,7 +74,8 @@ contract mockOVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
     
     function isCollateralizedByChainId(
         uint256 _chainId,
-        address _who
+        address _who,
+        address _prop
     )
         override
         public
@@ -83,9 +84,7 @@ contract mockOVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
             bool
         )
     {
-        // Only authenticate sequencer to submit state root batches.
-        return true;
-        //_who == resolve("OVM_Proposer");
+        return _who == _prop;
     }
     
     function getGasSpent(
