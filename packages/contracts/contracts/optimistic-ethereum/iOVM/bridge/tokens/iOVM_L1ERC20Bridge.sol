@@ -58,7 +58,7 @@ interface iOVM_L1ERC20Bridge {
         uint32 _l2Gas,
         bytes calldata _data
     )
-        external;
+        external payable;
 
     /**
      * @dev deposit an amount of ERC20 to a recipient's balance on L2.
@@ -79,7 +79,7 @@ interface iOVM_L1ERC20Bridge {
         uint32 _l2Gas,
         bytes calldata _data
     )
-        external;
+        external payable;
 
 /**
      * @dev deposit an amount of the ERC20 to the caller's balance on L2.
@@ -100,7 +100,7 @@ interface iOVM_L1ERC20Bridge {
         uint32 _l2Gas,
         bytes calldata _data
     )
-        external;
+        external payable;
 
     /**
      * @dev deposit an amount of ERC20 to a recipient's balance on L2.
@@ -123,7 +123,7 @@ interface iOVM_L1ERC20Bridge {
         uint32 _l2Gas,
         bytes calldata _data
     )
-        external;
+        external payable;
 
     /*************************
      * Cross-chain Functions *

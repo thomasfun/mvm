@@ -20,6 +20,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 
 import { Lib_PredeployAddresses } from "../../../libraries/constants/Lib_PredeployAddresses.sol";
 import { OVM_DeployerWhitelist } from "../../predeploys/OVM_DeployerWhitelist.sol";
+import { MVM_Coinbase } from "../../../MVM/MVM_Coinbase.sol";
 
 /**
  * @title OVM_L2CrossDomainMessenger
@@ -109,6 +110,7 @@ contract OVM_L2CrossDomainMessenger is
     )
         override
         public
+        payable
         onlyWhitelisted
     {
         bytes memory xDomainCalldata = Lib_CrossDomainUtils.encodeXDomainCalldata(
@@ -223,24 +225,13 @@ contract OVM_L2CrossDomainMessenger is
      */
     function _sendXDomainMessage(
         bytes memory _message,
-        uint256 _gasLimit
+        uint256 //_gasLimit
     )
         internal
     {
-        uint256 gasToConsume = _gasLimit;
-        uint256 startingGas = gasleft();
-
-        // Although this check is not necessary (burn below will run out of gas if not true), it
-        // gives the user an explicit reason as to why the enqueue attempt failed.
-        require(
-            startingGas > gasToConsume,
-            "Insufficient l1gas for cross domain messages."
-        );
-        
-        uint256 i;
-        while(startingGas - gasleft() < gasToConsume) {
-            i++;
-        }
+        MVM_Coinbase(Lib_PredeployAddresses.MVM_COINBASE).transfer(
+                Lib_PredeployAddresses.SEQUENCER_FEE_WALLET,
+                msg.value);
         
         iOVM_L2ToL1MessagePasser(resolve("OVM_L2ToL1MessagePasser")).passMessageToL1(_message);
     }
@@ -261,6 +252,7 @@ contract OVM_L2CrossDomainMessenger is
     )
         override
         public
+        payable
     {
     }
 }

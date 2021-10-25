@@ -67,6 +67,7 @@ contract OVM_DeployerWhitelist is iOVM_DeployerWhitelist {
 
         initialized = true;
         allowArbitraryDeployment = _allowArbitraryDeployment;
+        allowAllXDomainSenders = _allowAllXDomainSenders;
         owner = _owner;
     }
 

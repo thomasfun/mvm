@@ -18,7 +18,8 @@ library Lib_PredeployAddresses {
     address internal constant PROXY_EOA = 0x4200000000000000000000000000000000000009;
     // solhint-disable-next-line max-line-length
     address internal constant EXECUTION_MANAGER_WRAPPER = 0x420000000000000000000000000000000000000B;
-    address internal constant SEQUENCER_FEE_WALLET = 0x4200000000000000000000000000000000000011;
+    // solhint-disable-next-line max-line-length
+    address payable internal constant SEQUENCER_FEE_WALLET = 0x4200000000000000000000000000000000000011;
     address internal constant ERC1820_REGISTRY = 0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24;
     address internal constant L2_STANDARD_BRIDGE = 0x4200000000000000000000000000000000000010;
     address internal constant MVM_GAS_ORACLE = 0x420000000000000000000000000000000000000F;

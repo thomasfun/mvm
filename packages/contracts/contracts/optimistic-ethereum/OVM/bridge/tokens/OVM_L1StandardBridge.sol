@@ -15,6 +15,8 @@ import { Lib_PredeployAddresses } from "../../../libraries/constants/Lib_Predepl
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { iMVM_DiscountOracle } from "../../../MVM/iMVM_DiscountOracle.sol";
+import { Lib_AddressManager } from "../../../libraries/resolver/Lib_AddressManager.sol";
 
 /**
  * @title OVM_L1StandardBridge
@@ -27,6 +29,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
  */
 contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
     using SafeMath for uint;
+    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     /********************************
@@ -35,6 +38,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
 
     address public override l2TokenBridge;
     address public metis;
+    address public addressmgr;
     uint256 public DefaultChainId = 1088;
 
     // Maps L1 token to chainid to L2 token to balance of the L1 token deposited
@@ -60,7 +64,8 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
     function initialize(
         address _l1messenger,
         address _l2TokenBridge,
-        address _metis
+        address _metis,
+        address _addressmgr
     )
         public
     {
@@ -68,6 +73,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         messenger = _l1messenger;
         l2TokenBridge = _l2TokenBridge;
         metis = _metis;
+        addressmgr = _addressmgr;
     }
 
     /**************
@@ -198,26 +204,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
     )
         internal
     {
-        // Construct calldata for finalizeDeposit call
-        bytes memory message =
-            abi.encodeWithSelector(
-                iOVM_L2ERC20Bridge.finalizeDeposit.selector,
-                address(0),
-                Lib_PredeployAddresses.OVM_ETH,
-                _from,
-                _to,
-                msg.value,
-                _data
-            );
-
-        // Send calldata into L2
-        sendCrossDomainMessage(
-            l2TokenBridge,
-            _l2Gas,
-            message
-        );
-
-        emit ETHDepositInitiated(_from, _to, msg.value, _data, DefaultChainId);
+        _initiateETHDepositByChainId(DefaultChainId, _from, _to, _l2Gas, _data);
     }
 
     function _initiateETHDepositByChainId(
@@ -229,6 +216,15 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
     )
         internal
     {
+    
+        iMVM_DiscountOracle oracle = iMVM_DiscountOracle(Lib_AddressManager(addressmgr).getAddress('MVM_DiscountOracle'));
+        uint32 mingas = uint32(oracle.getMinL2Gas());
+        if (_l2Gas < mingas) {
+            _l2Gas = mingas;
+        }
+        uint256 fee = _l2Gas / oracle.getDiscount();
+        
+        require(fee <= msg.value, string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(fee))));
         // Construct calldata for finalizeDeposit call
         bytes memory message =
             abi.encodeWithSelector(
@@ -237,16 +233,17 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
                 Lib_PredeployAddresses.OVM_ETH,
                 _from,
                 _to,
-                msg.value,
+                msg.value.sub(fee),
                 _data
             );
-
+        
         // Send calldata into L2
         sendCrossDomainMessageViaChainId(
             _chainId,
             l2TokenBridge,
             _l2Gas,
-            message
+            message,
+            fee  // only send the supplied fees over (obviously)
         );
 
         emit ETHDepositInitiated(_from, _to, msg.value, _data, _chainId);
@@ -265,6 +262,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         external
         override
         virtual
+        payable
         onlyEOA()
     {
         _initiateERC20DepositByChainId(DefaultChainId, _l1Token, _l2Token, msg.sender, msg.sender, _amount, _l2Gas, _data);
@@ -283,6 +281,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
     )
         external
         override
+        payable
         virtual
     {
         _initiateERC20DepositByChainId(DefaultChainId, _l1Token, _l2Token, msg.sender, _to, _amount, _l2Gas, _data);
@@ -302,6 +301,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         external
         override
         virtual
+        payable
         onlyEOA()
     {
         _initiateERC20DepositByChainId(_chainid, _l1Token, _l2Token, msg.sender, msg.sender, _amount, _l2Gas, _data);
@@ -321,6 +321,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
     )
         external
         override
+        payable
         virtual
     {
         _initiateERC20DepositByChainId(_chainid, _l1Token, _l2Token, msg.sender, _to, _amount, _l2Gas, _data);
@@ -352,6 +353,16 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
     )
         internal
     {
+        iMVM_DiscountOracle oracle = iMVM_DiscountOracle(Lib_AddressManager(addressmgr).getAddress('MVM_DiscountOracle'));
+        
+        // stack too deep. so no more local variables
+        if (_l2Gas < uint32(oracle.getMinL2Gas())) {
+            _l2Gas = uint32(oracle.getMinL2Gas());
+        }
+        
+        require(_l2Gas / oracle.getDiscount() <= msg.value, 
+                string(abi.encodePacked("insufficient fee supplied. send at least ", uint2str(_l2Gas / oracle.getDiscount()))));
+        
         // When a deposit is initiated on L1, the L1 Bridge transfers the funds to itself for future
         // withdrawals. safeTransferFrom also checks if the contract has code, so this will fail if
         // _from is an EOA or address(0).
@@ -394,13 +405,15 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
             _chainId,
             l2TokenBridge,
             _l2Gas,
-            message
+            message,
+            msg.value  //send all values as fees to cover l2 tx cost
         );
         
         deposits[_l1Token][_chainId][_l2Token] = deposits[_l1Token][_chainId][_l2Token].add(_amount);
 
-        emit ERC20DepositInitiated(_l1Token, _l2Token, _from, _to, _amount, _data);
         emit ERC20ChainID(_chainId);
+        emit ERC20DepositInitiated(_l1Token, _l2Token, _from, _to, _amount, _data);
+        
     }
 
     /*************************
@@ -516,9 +529,29 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         // When a withdrawal is finalized on L1, the L1 Bridge transfers the funds to the withdrawer
         IERC20(_l1Token).safeTransfer(_to, _amount);
 
-        emit ERC20WithdrawalFinalized(_l1Token, _l2Token, _from, _to, _amount, _data);
         emit ERC20ChainID(_chainid);
+        emit ERC20WithdrawalFinalized(_l1Token, _l2Token, _from, _to, _amount, _data);
+        
     }
+    
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+         if (_i == 0) {
+             return "0";
+         }
+         uint j = _i;
+         uint len;
+         while (j != 0) {
+            len++;
+            j /= 10;
+         }
+         bytes memory bstr = new bytes(len);
+         uint k = len - 1;
+         while (_i != 0) {
+            bstr[k--] = byte(uint8(48 + _i % 10));
+            _i /= 10;
+         }
+         return string(bstr);
+   }
 
     /*****************************
      * Temporary - Migrating ETH and ERC*

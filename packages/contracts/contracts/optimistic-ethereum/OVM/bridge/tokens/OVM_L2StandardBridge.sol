@@ -78,6 +78,7 @@ contract OVM_L2StandardBridge is iOVM_L2ERC20Bridge, OVM_CrossDomainEnabled {
         external
         override
         virtual
+        payable
     {
         _initiateWithdrawal(
             _l2Token,
@@ -102,6 +103,7 @@ contract OVM_L2StandardBridge is iOVM_L2ERC20Bridge, OVM_CrossDomainEnabled {
         external
         override
         virtual
+        payable
     {
         _initiateWithdrawal(
             _l2Token,
@@ -137,9 +139,9 @@ contract OVM_L2StandardBridge is iOVM_L2ERC20Bridge, OVM_CrossDomainEnabled {
     {
     
         uint256 minL1Gas = MVM_GasOracle(Lib_PredeployAddresses.MVM_GAS_ORACLE).minL1GasLimit();
-        if (_l1Gas < minL1Gas) {
-           _l1Gas = uint32(minL1Gas);
-        }
+        
+        require (msg.value >= minL1Gas, 
+                 string(abi.encodePacked("insufficient withdrawal fee supplied. need at least ", uint2str(minL1Gas))));
         
         // When a withdrawal is initiated, we burn the withdrawer's funds to prevent subsequent L2
         // usage
@@ -184,7 +186,8 @@ contract OVM_L2StandardBridge is iOVM_L2ERC20Bridge, OVM_CrossDomainEnabled {
         sendCrossDomainMessage(
             l1TokenBridge,
             _l1Gas,
-            message
+            message,
+            msg.value  // send all value as fees to cover relayer cost
         );
 
         emit WithdrawalInitiated(l1Token, _l2Token, msg.sender, _to, _amount, _data);
@@ -221,6 +224,8 @@ contract OVM_L2StandardBridge is iOVM_L2ERC20Bridge, OVM_CrossDomainEnabled {
             IL2StandardERC20(_l2Token).mint(_to, _amount);
             emit DepositFinalized(_l1Token, _l2Token, _from, _to, _amount, _data);
         } else {
+            // disable because the mechanism is incompatible with the new xdomain fee structure.
+            
             // Either the L2 token which is being deposited-into disagrees about the correct address
             // of its L1 token, or does not support the correct interface.
             // This should only happen if there is a  malicious L2 token, or if a user somehow
@@ -229,23 +234,43 @@ contract OVM_L2StandardBridge is iOVM_L2ERC20Bridge, OVM_CrossDomainEnabled {
             // message so that users can get their funds out in some cases.
             // There is no way to prevent malicious token contracts altogether, but this does limit
             // user error and mitigate some forms of malicious contract behavior.
-            bytes memory message = abi.encodeWithSelector(
-                iOVM_L1ERC20Bridge.finalizeERC20Withdrawal.selector,
-                _l1Token,
-                _l2Token,
-                _to,   // switched the _to and _from here to bounce back the deposit to the sender
-                _from,
-                _amount,
-                _data
-            );
+            //bytes memory message = abi.encodeWithSelector(
+            //    iOVM_L1ERC20Bridge.finalizeERC20Withdrawal.selector,
+            //    _l1Token,
+            //    _l2Token,
+            //    _to,   // switched the _to and _from here to bounce back the deposit to the sender
+            //    _from,
+            //    _amount,
+            //    _data
+            //);
 
             // Send message up to L1 bridge
-            sendCrossDomainMessage(
-                l1TokenBridge,
-                0,
-                message
-            );
+            //sendCrossDomainMessage(
+            //    l1TokenBridge,
+            //    0,
+            //    message,
+            //    0 
+            //);
             emit DepositFailed(_l1Token, _l2Token, _from, _to, _amount, _data);
         }
     }
+    
+    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {
+         if (_i == 0) {
+             return "0";
+         }
+         uint j = _i;
+         uint len;
+         while (j != 0) {
+            len++;
+            j /= 10;
+         }
+         bytes memory bstr = new bytes(len);
+         uint k = len - 1;
+         while (_i != 0) {
+            bstr[k--] = byte(uint8(48 + _i % 10));
+            _i /= 10;
+         }
+         return string(bstr);
+   }
 }
