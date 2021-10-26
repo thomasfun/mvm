@@ -106,6 +106,10 @@ contract MVM_DiscountOracle is Ownable, iMVM_DiscountOracle, MVM_AddressResolver
         (payable(sequencer)).transfer(msg.value);
     }
     
+    function isTrustedRelayer(uint256 chainid, address sender) view public override returns(bool) {
+        return (sender == resolveFromMvm(string(abi.encodePacked(uint2str(chainid), "_MVM_RELAYER"))));
+    }
+    
     function makeChainSeq(uint256 i) internal returns (string memory c) {
         if (i == 0) return "0";
         uint j = i;

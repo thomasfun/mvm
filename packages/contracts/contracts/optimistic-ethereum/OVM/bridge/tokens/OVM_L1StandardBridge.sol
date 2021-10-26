@@ -375,6 +375,7 @@ contract OVM_L1StandardBridge is iOVM_L1StandardBridge, OVM_CrossDomainEnabled {
         bytes memory message;
         if (_l1Token == metis) {
             // Construct calldata for finalizeDeposit call
+          _l2Token = Lib_PredeployAddresses.MVM_COINBASE;
           message =
             abi.encodeWithSelector(
                 iOVM_L2ERC20Bridge.finalizeDeposit.selector,

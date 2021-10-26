@@ -1515,7 +1515,7 @@ contract OVM_CanonicalTransactionChain is iOVM_CanonicalTransactionChain, Lib_Ad
                 string memory ch = makeChainSeq(_chainId);
                 require(
                     msg.sender == resolveFromMvm(ch),
-                    "Function can only be called by the Sequencer for resolveFromMvm2."
+                    "Function can only be called by the MVM Sequencer."
                 );
                 prevChainId = _chainId;
             }

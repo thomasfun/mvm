@@ -761,6 +761,12 @@ contract OVM_L1CrossDomainMessenger is
             bool
         )
     {
+        iMVM_DiscountOracle oracle = iMVM_DiscountOracle(resolve('MVM_DiscountOracle'));
+        
+        if (oracle.isTrustedRelayer(_chainId, msg.sender)) {
+            return true;
+        }
+        
         bytes32 storageKey = keccak256(
             abi.encodePacked(
                 keccak256(
