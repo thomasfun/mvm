@@ -84,7 +84,22 @@ interface iOVM_BondManager {
         uint256 _gasSpent
     ) external;
 
+    function recordGasSpentByChainId(
+        uint256 _chainId,
+        bytes32 _preStateRoot,
+        bytes32 _txHash,
+        address _who,
+        uint256 _gasSpent
+    ) external;
+
     function finalize(
+        bytes32 _preStateRoot,
+        address _publisher,
+        uint256 _timestamp
+    ) external;
+
+    function finalizeByChainId(
+        uint256 _chainId,
         bytes32 _preStateRoot,
         address _publisher,
         uint256 _timestamp
@@ -92,11 +107,28 @@ interface iOVM_BondManager {
 
     function deposit() external;
 
+    function depositByChainId(
+        uint256 _chainId
+        ) external;
+
     function startWithdrawal() external;
+
+    function startWithdrawalByChainId(
+        uint256 _chainId
+        ) external;
 
     function finalizeWithdrawal() external;
 
+    function finalizeWithdrawalByChainId(
+        uint256 _chainId
+        ) external;
+
     function claim(
+        address _who
+    ) external;
+
+    function claimByChainId(
+        uint256 _chainId,
         address _who
     ) external;
 
@@ -111,6 +143,12 @@ interface iOVM_BondManager {
     ) external view returns (bool);
 
     function getGasSpent(
+        bytes32 _preStateRoot,
+        address _who
+    ) external view returns (uint256);
+
+    function getGasSpentByChainId(
+        uint256 _chainId,
         bytes32 _preStateRoot,
         address _who
     ) external view returns (uint256);

@@ -18,6 +18,7 @@ interface iOVM_FraudVerifier {
      **********/
 
     event FraudProofInitialized(
+        uint256 _chainId,
         bytes32 _preStateRoot,
         uint256 _preStateRootIndex,
         bytes32 _transactionHash,
@@ -25,6 +26,7 @@ interface iOVM_FraudVerifier {
     );
 
     event FraudProofFinalized(
+        uint256 _chainId,
         bytes32 _preStateRoot,
         uint256 _preStateRootIndex,
         bytes32 _transactionHash,
@@ -37,6 +39,9 @@ interface iOVM_FraudVerifier {
      ***************************************/
 
     function getStateTransitioner(bytes32 _preStateRoot, bytes32 _txHash) external view
+        returns (iOVM_StateTransitioner _transitioner);
+
+    function getStateTransitionerByChainId(uint256 _chainId, bytes32 _preStateRoot, bytes32 _txHash) external view
         returns (iOVM_StateTransitioner _transitioner);
 
 
@@ -54,7 +59,30 @@ interface iOVM_FraudVerifier {
         Lib_OVMCodec.ChainInclusionProof calldata _transactionProof
     ) external;
 
+    function initializeFraudVerificationByChainId(
+        uint256 _chainId,
+        bytes32 _preStateRoot,
+        Lib_OVMCodec.ChainBatchHeader calldata _preStateRootBatchHeader,
+        Lib_OVMCodec.ChainInclusionProof calldata _preStateRootProof,
+        Lib_OVMCodec.Transaction calldata _transaction,
+        Lib_OVMCodec.TransactionChainElement calldata _txChainElement,
+        Lib_OVMCodec.ChainBatchHeader calldata _transactionBatchHeader,
+        Lib_OVMCodec.ChainInclusionProof calldata _transactionProof
+    ) external;
+
+
     function finalizeFraudVerification(
+        bytes32 _preStateRoot,
+        Lib_OVMCodec.ChainBatchHeader calldata _preStateRootBatchHeader,
+        Lib_OVMCodec.ChainInclusionProof calldata _preStateRootProof,
+        bytes32 _txHash,
+        bytes32 _postStateRoot,
+        Lib_OVMCodec.ChainBatchHeader calldata _postStateRootBatchHeader,
+        Lib_OVMCodec.ChainInclusionProof calldata _postStateRootProof
+    ) external;
+
+    function finalizeFraudVerificationByChainId(
+        uint256 _chainId,
         bytes32 _preStateRoot,
         Lib_OVMCodec.ChainBatchHeader calldata _preStateRootBatchHeader,
         Lib_OVMCodec.ChainInclusionProof calldata _preStateRootProof,

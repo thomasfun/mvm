@@ -33,6 +33,7 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
     /// The minimum collateral a sequencer must post
     uint256 public constant requiredCollateral = 1 ether;
 
+    uint256 DefaultChainId = 420;
 
     /*******************************************
      * Contract Variables: Contract References *
@@ -47,11 +48,11 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
      *******************************************/
 
     /// The bonds posted by each proposer
-    mapping(address => Bond) public bonds;
+    mapping(uint256=>mapping(address => Bond)) public bonds;
 
     /// For each pre-state root, there's an array of witnessProviders that must be rewarded
     /// for posting witnesses
-    mapping(bytes32 => Rewards) public witnessProviders;
+    mapping(uint256=>mapping(bytes32 => Rewards)) public witnessProviders;
 
 
     /***************
@@ -77,27 +78,34 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
     /// Adds `who` to the list of witnessProviders for the provided `preStateRoot`.
     function recordGasSpent(bytes32 _preStateRoot, bytes32 _txHash, address who, uint256 gasSpent)
     override public {
+        recordGasSpentByChainId(DefaultChainId,_preStateRoot,_txHash,who,gasSpent);
+    }
+    function recordGasSpentByChainId(uint256 _chainId, bytes32 _preStateRoot, bytes32 _txHash, address who, uint256 gasSpent)
+    override public {
         // The sender must be the transitioner that corresponds to the claimed pre-state root
         address transitioner =
             address(iOVM_FraudVerifier(resolve("OVM_FraudVerifier"))
-            .getStateTransitioner(_preStateRoot, _txHash));
+            .getStateTransitionerByChainId(_chainId, _preStateRoot, _txHash));
         require(transitioner == msg.sender, Errors.ONLY_TRANSITIONER);
 
-        witnessProviders[_preStateRoot].total += gasSpent;
-        witnessProviders[_preStateRoot].gasSpent[who] += gasSpent;
+        witnessProviders[_chainId][_preStateRoot].total += gasSpent;
+        witnessProviders[_chainId][_preStateRoot].gasSpent[who] += gasSpent;
     }
 
     /// Slashes + distributes rewards or frees up the sequencer's bond, only called by
     /// `FraudVerifier.finalizeFraudVerification`
     function finalize(bytes32 _preStateRoot, address publisher, uint256 timestamp) override public {
+        finalizeByChainId(DefaultChainId,_preStateRoot,publisher,timestamp);
+    }
+    function finalizeByChainId(uint256 _chainId, bytes32 _preStateRoot, address publisher, uint256 timestamp) override public {
         require(msg.sender == resolve("OVM_FraudVerifier"), Errors.ONLY_FRAUD_VERIFIER);
-        require(witnessProviders[_preStateRoot].canClaim == false, Errors.ALREADY_FINALIZED);
+        require(witnessProviders[_chainId][_preStateRoot].canClaim == false, Errors.ALREADY_FINALIZED);
 
         // allow users to claim from that state root's
         // pool of collateral (effectively slashing the sequencer)
-        witnessProviders[_preStateRoot].canClaim = true;
+        witnessProviders[_chainId][_preStateRoot].canClaim = true;
 
-        Bond storage bond = bonds[publisher];
+        Bond storage bond = bonds[_chainId][publisher];
         if (bond.firstDisputeAt == 0) {
             bond.firstDisputeAt = block.timestamp;
             bond.earliestDisputedStateRoot = _preStateRoot;
@@ -132,19 +140,26 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
 
     /// Sequencers call this function to post collateral which will be used for
     /// the `appendBatch` call
+
     function deposit() override public {
+        depositByChainId(DefaultChainId);
+    }
+    function depositByChainId(uint256 _chainId) override public {
         require(
             token.transferFrom(msg.sender, address(this), requiredCollateral),
             Errors.ERC20_ERR
         );
 
         // This cannot overflow
-        bonds[msg.sender].state = State.COLLATERALIZED;
+        bonds[_chainId][msg.sender].state = State.COLLATERALIZED;
     }
 
     /// Starts the withdrawal for a publisher
     function startWithdrawal() override public {
-        Bond storage bond = bonds[msg.sender];
+        startWithdrawalByChainId(DefaultChainId);
+    }
+    function startWithdrawalByChainId(uint256 _chainId) override public {
+        Bond storage bond = bonds[_chainId][msg.sender];
         require(bond.withdrawalTimestamp == 0, Errors.WITHDRAWAL_PENDING);
         require(bond.state == State.COLLATERALIZED, Errors.WRONG_STATE);
 
@@ -154,7 +169,10 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
 
     /// Finalizes a pending withdrawal from a publisher
     function finalizeWithdrawal() override public {
-        Bond storage bond = bonds[msg.sender];
+        finalizeWithdrawalByChainId(DefaultChainId);
+    }
+    function finalizeWithdrawalByChainId(uint256 _chainId) override public {
+        Bond storage bond = bonds[_chainId][msg.sender];
 
         require(
             block.timestamp >= uint256(bond.withdrawalTimestamp) + disputePeriodSeconds,
@@ -175,7 +193,10 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
     /// Claims the user's reward for the witnesses they provided for the earliest
     /// disputed state root of the designated publisher
     function claim(address who) override public {
-        Bond storage bond = bonds[who];
+        claimByChainId(DefaultChainId,who);
+    }
+    function claimByChainId(uint256 _chainId, address who) override public {
+        Bond storage bond = bonds[_chainId][who];
         require(
             block.timestamp >= bond.firstDisputeAt + multiFraudProofPeriod,
             Errors.WAIT_FOR_DISPUTES
@@ -183,7 +204,7 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
 
         // reward the earliest state root for this publisher
         bytes32 _preStateRoot = bond.earliestDisputedStateRoot;
-        Rewards storage rewards = witnessProviders[_preStateRoot];
+        Rewards storage rewards = witnessProviders[_chainId][_preStateRoot];
 
         // only allow claiming if fraud was proven in `finalize`
         require(rewards.canClaim, Errors.CANNOT_CLAIM);
@@ -217,6 +238,9 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
 
     /// Gets how many witnesses the user has provided for the state root
     function getGasSpent(bytes32 preStateRoot, address who) override public view returns (uint256) {
-        return witnessProviders[preStateRoot].gasSpent[who];
+        return getGasSpentByChainId(DefaultChainId,preStateRoot,who);
+    }
+    function getGasSpentByChainId(uint256 _chainId, bytes32 preStateRoot, address who) override public view returns (uint256) {
+        return witnessProviders[_chainId][preStateRoot].gasSpent[who];
     }
 }
