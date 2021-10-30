@@ -1,5 +1,9 @@
 /* Imports: External */
+<<<<<<< HEAD
 import { Contract, utils, Wallet } from 'ethers'
+=======
+import { Contract, utils, Wallet, providers } from 'ethers'
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 import { TransactionResponse } from '@ethersproject/providers'
 import { getContractFactory, predeploys } from '@eth-optimism/contracts'
 import { Watcher } from '@eth-optimism/core-utils'
@@ -40,6 +44,10 @@ export class OptimismEnv {
   l2Bridge: Contract
   l2Messenger: Contract
   gasPriceOracle: Contract
+<<<<<<< HEAD
+=======
+  sequencerFeeVault: Contract
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
   // The L1 <> L2 State watcher
   watcher: Watcher
@@ -47,6 +55,10 @@ export class OptimismEnv {
   // The wallets
   l1Wallet: Wallet
   l2Wallet: Wallet
+
+  // The providers
+  l1Provider: providers.JsonRpcProvider
+  l2Provider: providers.JsonRpcProvider
 
   constructor(args: any) {
     this.addressManager = args.addressManager
@@ -56,9 +68,15 @@ export class OptimismEnv {
     this.l2Bridge = args.l2Bridge
     this.l2Messenger = args.l2Messenger
     this.gasPriceOracle = args.gasPriceOracle
+<<<<<<< HEAD
+=======
+    this.sequencerFeeVault = args.sequencerFeeVault
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     this.watcher = args.watcher
     this.l1Wallet = args.l1Wallet
     this.l2Wallet = args.l2Wallet
+    this.l1Provider = args.l1Provider
+    this.l2Provider = args.l2Provider
     this.ctc = args.ctc
     this.scc = args.scc
   }
@@ -73,19 +91,27 @@ export class OptimismEnv {
     if (balance.isZero()) {
       await fundUser(watcher, l1Bridge, utils.parseEther('20'))
     }
+<<<<<<< HEAD
     const l1Messenger = getContractFactory('iOVM_L1CrossDomainMessenger')
+=======
+    const l1Messenger = getContractFactory('L1CrossDomainMessenger')
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
       .connect(l1Wallet)
       .attach(watcher.l1.messengerAddress)
     const ovmEth = getOvmEth(l2Wallet)
     const l2Bridge = await getL2Bridge(l2Wallet)
+<<<<<<< HEAD
     const l2Messenger = getContractFactory('iOVM_L2CrossDomainMessenger')
+=======
+    const l2Messenger = getContractFactory('L2CrossDomainMessenger')
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
       .connect(l2Wallet)
       .attach(watcher.l2.messengerAddress)
 
     const ctcAddress = await addressManager.getAddress(
-      'OVM_CanonicalTransactionChain'
+      'CanonicalTransactionChain'
     )
-    const ctc = getContractFactory('OVM_CanonicalTransactionChain')
+    const ctc = getContractFactory('CanonicalTransactionChain')
       .connect(l1Wallet)
       .attach(ctcAddress)
 
@@ -93,6 +119,7 @@ export class OptimismEnv {
       .connect(l2Wallet)
       .attach(predeploys.OVM_GasPriceOracle)
 
+<<<<<<< HEAD
     const sccAddress = await addressManager.getAddress(
       'OVM_StateCommitmentChain'
     )
@@ -100,6 +127,17 @@ export class OptimismEnv {
       .connect(l1Wallet)
       .attach(sccAddress)
 
+=======
+    const sccAddress = await addressManager.getAddress('StateCommitmentChain')
+    const scc = getContractFactory('StateCommitmentChain')
+      .connect(l1Wallet)
+      .attach(sccAddress)
+
+    const sequencerFeeVault = getContractFactory('OVM_SequencerFeeVault')
+      .connect(l2Wallet)
+      .attach(predeploys.OVM_SequencerFeeVault)
+
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     return new OptimismEnv({
       addressManager,
       l1Bridge,
@@ -108,11 +146,17 @@ export class OptimismEnv {
       l1Messenger,
       ovmEth,
       gasPriceOracle,
+<<<<<<< HEAD
+=======
+      sequencerFeeVault,
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
       l2Bridge,
       l2Messenger,
       watcher,
       l1Wallet,
       l2Wallet,
+      l1Provider,
+      l2Provider,
     })
   }
 
@@ -140,7 +184,11 @@ export class OptimismEnv {
           l1Provider,
           l2Provider,
           this.scc.address,
+<<<<<<< HEAD
           predeploys.OVM_L2CrossDomainMessenger,
+=======
+          predeploys.L2CrossDomainMessenger,
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
           tx.hash
         )
         break

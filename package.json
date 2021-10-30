@@ -9,10 +9,17 @@
       "l2geth",
       "integration-tests",
       "specs",
+<<<<<<< HEAD
       "go/gas-oracle"
     ],
     "nohoist": [
       "examples/*"
+=======
+      "go/gas-oracle",
+      "go/batch-submitter",
+      "ops/docker/builder",
+      "ops/docker/hardhat"
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     ]
   },
   "private": true,
@@ -33,16 +40,22 @@
     "lerna": "^4.0.0",
     "patch-package": "^6.4.7",
     "prettier": "^2.3.1",
+<<<<<<< HEAD
+=======
+    "prettier-plugin-solidity": "^1.0.0-beta.18",
+    "solhint-plugin-prettier": "^0.0.5",
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     "typescript": "^4.3.5"
   },
   "scripts": {
-    "clean": "yarn lerna run clean",
+    "clean": "yarn lerna run clean --parallel",
     "build": "yarn lerna run build",
     "test": "yarn lerna run test --parallel",
     "test:coverage": "yarn lerna run test:coverage --parallel",
     "lint": "yarn lerna run lint",
+    "lint:ts:check": "yarn lerna run lint:ts:check",
     "lint:check": "yarn lerna run lint:check",
-    "lint:fix": "yarn lerna run lint:fix",
+    "lint:fix": "yarn lerna run lint:fix --parallel",
     "postinstall": "patch-package",
     "ready": "yarn lint && yarn test",
     "prepare": "husky install",

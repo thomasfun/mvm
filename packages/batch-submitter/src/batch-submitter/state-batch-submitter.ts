@@ -13,7 +13,11 @@ import { Logger, Metrics } from '@eth-optimism/common-ts'
 
 /* Internal Imports */
 import { BlockRange, BatchSubmitter } from '.'
+<<<<<<< HEAD
 import { TransactionSubmitter } from '../utils/'
+=======
+import { TransactionSubmitter } from '../utils'
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
 export class StateBatchSubmitter extends BatchSubmitter {
   // TODO: Change this so that we calculate start = scc.totalElements() and end = ctc.totalElements()!
@@ -156,8 +160,13 @@ export class StateBatchSubmitter extends BatchSubmitter {
     const proposer = parseInt(this.l2ChainId.toString())+"_MVM_Proposer"
     const batch = await this._generateStateCommitmentBatch(startBlock, endBlock)
     const calldata = this.chainContract.interface.encodeFunctionData(
+<<<<<<< HEAD
       'appendStateBatchByChainId',
       [this.l2ChainId, batch, startBlock, proposer]
+=======
+      'appendStateBatch',
+      [batch, startBlock]
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     )
     const batchSizeInBytes = remove0x(calldata).length / 2
     this.logger.debug('State batch generated', {
@@ -174,6 +183,7 @@ export class StateBatchSubmitter extends BatchSubmitter {
 
     // Generate the transaction we will repeatedly submit
     const nonce = await this.signer.getTransactionCount()
+<<<<<<< HEAD
     const tx = await this.chainContract.populateTransaction.appendStateBatchByChainId(
       this.l2ChainId,
       batch,
@@ -183,6 +193,13 @@ export class StateBatchSubmitter extends BatchSubmitter {
     )
     
     this.logger.info('Submitting batch.', { chainId:this.l2ChainId,proposer:proposer })
+=======
+    const tx = await this.chainContract.populateTransaction.appendStateBatch(
+      batch,
+      offsetStartsAtIndex,
+      { nonce }
+    )
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     const submitTransaction = (): Promise<TransactionReceipt> => {
       return this.transactionSubmitter.submitTransaction(
         tx,

@@ -131,7 +131,6 @@ type RollupClient interface {
 	GetLatestTransactionBatchIndex() (*uint64, error)
 	GetTransactionBatch(uint64) (*Batch, []*types.Transaction, error)
 	SyncStatus(Backend) (*SyncStatus, error)
-	GetL1GasPrice() (*big.Int, error)
 }
 
 // Client is an HTTP based RollupClient
@@ -624,6 +623,7 @@ func parseTransactionBatchResponse(txBatch *TransactionBatchResponse, signer *ty
 	}
 	return batch, txs, nil
 }
+<<<<<<< HEAD
 
 // GetL1GasPrice will return the current gas price on L1
 func (c *Client) GetL1GasPrice() (*big.Int, error) {
@@ -677,3 +677,5 @@ func (c *Client) GetL1GasPrice() (*big.Int, error) {
 
 	return price_eth, nil
 }
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337

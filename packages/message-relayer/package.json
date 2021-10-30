@@ -34,19 +34,32 @@
     "url": "https://github.com/ethereum-optimism/optimism.git"
   },
   "dependencies": {
+<<<<<<< HEAD
     "@eth-optimism/common-ts": "^0.1.5",
     "@metis.io/contracts": "^1.1.*",
     "@eth-optimism/core-utils": "^0.6.0",
     "@sentry/node": "6.2.5",
     "bcfg": "^0.1.6",
     "dotenv": "^8.2.0",
+=======
+    "@eth-optimism/common-ts": "0.1.5",
+    "@eth-optimism/contracts": "^0.4.13",
+    "@eth-optimism/core-utils": "^0.6.0",
+    "@sentry/node": "^6.3.1",
+    "bcfg": "^0.1.6",
+    "dotenv": "^10.0.0",
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     "ethers": "^5.4.5",
     "merkletreejs": "^0.2.18",
     "mongoose": "^5.13.2",
     "rlp": "^2.2.6"
   },
   "devDependencies": {
+<<<<<<< HEAD
     "@eth-optimism/smock": "^1.1.9",
+=======
+    "@eth-optimism/smock": "^1.1.10",
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     "@nomiclabs/ethereumjs-vm": "^4",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
@@ -55,7 +68,10 @@
     "@types/mocha": "^8.2.2",
     "@typescript-eslint/eslint-plugin": "^4.26.0",
     "@typescript-eslint/parser": "^4.26.0",
+<<<<<<< HEAD
     "@types/mongoose": "^5.11.97",
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     "babel-eslint": "^10.1.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
@@ -73,7 +89,12 @@
     "lint-staged": "11.0.0",
     "lodash": "^4.17.21",
     "mocha": "^8.4.0",
+<<<<<<< HEAD
     "prettier": "^2.2.1",
     "typescript": "^4.2.3"
+=======
+    "prettier": "^2.3.1",
+    "typescript": "^4.3.5"
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   }
 }

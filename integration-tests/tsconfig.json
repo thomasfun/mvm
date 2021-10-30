@@ -3,6 +3,10 @@
   "compilerOptions": {
       "resolveJsonModule": true
   },
+<<<<<<< HEAD
   "include": ["./test", "sync-tests/*.ts", "./artifacts/**/*.json", "./artifacts-ovm/**/*.json"],
+=======
+  "include": ["./test", "sync-tests/*.ts", "./artifacts/**/*.json"],
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   "files": ["./hardhat.config.ts"]
 }

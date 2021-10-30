@@ -15,13 +15,18 @@ const deployFn: DeployFunction = async (hre) => {
 
   await deployAndRegister({
     hre,
+<<<<<<< HEAD
     name: 'OVM_ChainStorageContainer-CTC-queue',
     contract: 'OVM_ChainStorageContainer',
     args: [Lib_AddressManager.address, 'OVM_CanonicalTransactionChain'],
+=======
+    name: 'ChainStorageContainer-CTC-queue',
+    contract: 'ChainStorageContainer',
+    args: [Lib_AddressManager.address, 'CanonicalTransactionChain'],
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   })
 }
 
-deployFn.dependencies = ['Lib_AddressManager']
-deployFn.tags = ['OVM_ChainStorageContainer_ctc_queue']
+deployFn.tags = ['ChainStorageContainer_ctc_queue', 'upgrade']
 
 export default deployFn

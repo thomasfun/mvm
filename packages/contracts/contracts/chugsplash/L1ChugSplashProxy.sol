@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: MIT
+<<<<<<< HEAD
 pragma solidity >0.5.0 <0.8.0;
+=======
+pragma solidity ^0.8.9;
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
 import { iL1ChugSplashDeployer } from "./interfaces/iL1ChugSplashDeployer.sol";
 
@@ -15,13 +19,17 @@ import { iL1ChugSplashDeployer } from "./interfaces/iL1ChugSplashDeployer.sol";
  * modifier. And there almost certainly is not a good reason to not have that modifier. Beware!
  */
 contract L1ChugSplashProxy {
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     /*************
      * Constants *
      *************/
 
     // "Magic" prefix. When prepended to some arbitrary bytecode and used to create a contract, the
     // appended bytecode will be deployed as given.
+<<<<<<< HEAD
     bytes13 constant internal DEPLOY_CODE_PREFIX = 0x600D380380600D6000396000f3;
 
     // bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)
@@ -30,10 +38,22 @@ contract L1ChugSplashProxy {
     // bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1)
     bytes32 constant internal OWNER_KEY = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
+=======
+    bytes13 internal constant DEPLOY_CODE_PREFIX = 0x600D380380600D6000396000f3;
+
+    // bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1)
+    bytes32 internal constant IMPLEMENTATION_KEY =
+        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
+    // bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1)
+    bytes32 internal constant OWNER_KEY =
+        0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
     /***************
      * Constructor *
      ***************/
+<<<<<<< HEAD
     
     /**
      * @param _owner Address of the initial contract owner.
@@ -45,6 +65,16 @@ contract L1ChugSplashProxy {
     }
 
 
+=======
+
+    /**
+     * @param _owner Address of the initial contract owner.
+     */
+    constructor(address _owner) {
+        _setOwner(_owner);
+    }
+
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     /**********************
      * Function Modifiers *
      **********************/
@@ -60,9 +90,13 @@ contract L1ChugSplashProxy {
         // L1ChugSplashDeployer contract and Solidity will throw errors if we do a normal call and
         // it turns out that it isn't the right type of contract.
         (bool success, bytes memory returndata) = owner.staticcall(
+<<<<<<< HEAD
             abi.encodeWithSelector(
                 iL1ChugSplashDeployer.isUpgrading.selector
             )
+=======
+            abi.encodeWithSelector(iL1ChugSplashDeployer.isUpgrading.selector)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         );
 
         // If the call was unsuccessful then we assume that there's no "isUpgrading" method and we
@@ -73,10 +107,14 @@ contract L1ChugSplashProxy {
             // case that the isUpgrading function returned something other than 0 or 1. But we only
             // really care about the case where this value is 0 (= false).
             uint256 ret = abi.decode(returndata, (uint256));
+<<<<<<< HEAD
             require(
                 ret == 0,
                 "L1ChugSplashProxy: system is currently being upgraded"
             );
+=======
+            require(ret == 0, "L1ChugSplashProxy: system is currently being upgraded");
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         }
 
         _;
@@ -105,20 +143,30 @@ contract L1ChugSplashProxy {
         }
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     /*********************
      * Fallback Function *
      *********************/
 
+<<<<<<< HEAD
     fallback()
         external
         payable
     {
+=======
+    fallback() external payable {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         // Proxy call by default.
         _doProxyCall();
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     /********************
      * Public Functions *
      ********************/
@@ -130,12 +178,16 @@ contract L1ChugSplashProxy {
      * us a lot more freedom on the client side. Can only be triggered by the contract owner.
      * @param _code New contract code to run inside this contract.
      */
+<<<<<<< HEAD
     function setCode(
         bytes memory _code
     )
         proxyCallIfNotOwner
         public
     {
+=======
+    function setCode(bytes memory _code) public proxyCallIfNotOwner {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         // Get the code hash of the current implementation.
         address implementation = _getImplementation();
 
@@ -145,10 +197,14 @@ contract L1ChugSplashProxy {
         }
 
         // Create the deploycode by appending the magic prefix.
+<<<<<<< HEAD
         bytes memory deploycode = abi.encodePacked(
             DEPLOY_CODE_PREFIX,
             _code
         );
+=======
+        bytes memory deploycode = abi.encodePacked(DEPLOY_CODE_PREFIX, _code);
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
         // Deploy the code and set the new implementation address.
         address newImplementation;
@@ -174,6 +230,7 @@ contract L1ChugSplashProxy {
      * @param _key Storage key to modify.
      * @param _value New value for the storage key.
      */
+<<<<<<< HEAD
     function setStorage(
         bytes32 _key,
         bytes32 _value
@@ -181,6 +238,9 @@ contract L1ChugSplashProxy {
         proxyCallIfNotOwner
         public
     {
+=======
+    function setStorage(bytes32 _key, bytes32 _value) public proxyCallIfNotOwner {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         assembly {
             sstore(_key, _value)
         }
@@ -190,12 +250,16 @@ contract L1ChugSplashProxy {
      * Changes the owner of the proxy contract. Only callable by the owner.
      * @param _owner New owner of the proxy contract.
      */
+<<<<<<< HEAD
     function setOwner(
         address _owner
     )
         proxyCallIfNotOwner
         public
     {
+=======
+    function setOwner(address _owner) public proxyCallIfNotOwner {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         _setOwner(_owner);
     }
 
@@ -204,6 +268,7 @@ contract L1ChugSplashProxy {
      * eth_call and setting the "from" address to address(0).
      * @return Owner address.
      */
+<<<<<<< HEAD
     function getOwner()
         proxyCallIfNotOwner
         public
@@ -211,6 +276,9 @@ contract L1ChugSplashProxy {
             address
         )
     {
+=======
+    function getOwner() public proxyCallIfNotOwner returns (address) {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         return _getOwner();
     }
 
@@ -219,6 +287,7 @@ contract L1ChugSplashProxy {
      * eth_call and setting the "from" address to address(0).
      * @return Implementation address.
      */
+<<<<<<< HEAD
     function getImplementation()
         proxyCallIfNotOwner
         public
@@ -230,6 +299,12 @@ contract L1ChugSplashProxy {
     }
 
 
+=======
+    function getImplementation() public proxyCallIfNotOwner returns (address) {
+        return _getImplementation();
+    }
+
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     /**********************
      * Internal Functions *
      **********************/
@@ -238,11 +313,15 @@ contract L1ChugSplashProxy {
      * Sets the implementation address.
      * @param _implementation New implementation address.
      */
+<<<<<<< HEAD
     function _setImplementation(
         address _implementation
     )
         internal
     {
+=======
+    function _setImplementation(address _implementation) internal {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         assembly {
             sstore(IMPLEMENTATION_KEY, _implementation)
         }
@@ -252,6 +331,7 @@ contract L1ChugSplashProxy {
      * Queries the implementation address.
      * @return Implementation address.
      */
+<<<<<<< HEAD
     function _getImplementation()
         internal
         view
@@ -259,6 +339,9 @@ contract L1ChugSplashProxy {
             address
         )
     {
+=======
+    function _getImplementation() internal view returns (address) {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         address implementation;
         assembly {
             implementation := sload(IMPLEMENTATION_KEY)
@@ -270,11 +353,15 @@ contract L1ChugSplashProxy {
      * Changes the owner of the proxy contract.
      * @param _owner New owner of the proxy contract.
      */
+<<<<<<< HEAD
     function _setOwner(
         address _owner
     )
         internal
     {
+=======
+    function _setOwner(address _owner) internal {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         assembly {
             sstore(OWNER_KEY, _owner)
         }
@@ -284,6 +371,7 @@ contract L1ChugSplashProxy {
      * Queries the owner of the proxy contract.
      * @return Owner address.
      */
+<<<<<<< HEAD
     function _getOwner()
         internal
         view 
@@ -291,6 +379,9 @@ contract L1ChugSplashProxy {
             address
         )
     {
+=======
+    function _getOwner() internal view returns (address) {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         address owner;
         assembly {
             owner := sload(OWNER_KEY)
@@ -303,6 +394,7 @@ contract L1ChugSplashProxy {
      * @param _account Address of the account to get a code hash for.
      * @return Code hash for the account.
      */
+<<<<<<< HEAD
     function _getAccountCodeHash(
         address _account
     )
@@ -312,6 +404,9 @@ contract L1ChugSplashProxy {
             bytes32
         )
     {
+=======
+    function _getAccountCodeHash(address _account) internal view returns (bytes32) {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         bytes32 codeHash;
         assembly {
             codeHash := extcodehash(_account)
@@ -322,6 +417,7 @@ contract L1ChugSplashProxy {
     /**
      * Performs the proxy call via a delegatecall.
      */
+<<<<<<< HEAD
     function _doProxyCall()
         onlyWhenNotPaused
         internal
@@ -332,6 +428,12 @@ contract L1ChugSplashProxy {
             implementation != address(0),
             "L1ChugSplashProxy: implementation is not set yet"
         );
+=======
+    function _doProxyCall() internal onlyWhenNotPaused {
+        address implementation = _getImplementation();
+
+        require(implementation != address(0), "L1ChugSplashProxy: implementation is not set yet");
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
         assembly {
             // Copy calldata into memory at 0x0....calldatasize.
@@ -344,7 +446,11 @@ contract L1ChugSplashProxy {
             // overwrite the calldata that we just copied into memory but that doesn't really
             // matter because we'll be returning in a second anyway.
             returndatacopy(0x0, 0x0, returndatasize())
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
             // Success == 0 means a revert. We'll revert too and pass the data up.
             if iszero(success) {
                 revert(0x0, returndatasize())

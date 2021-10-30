@@ -22,11 +22,15 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/params"
+<<<<<<< HEAD
 	"github.com/ethereum/go-ethereum/rollup/fees"
+=======
+	"github.com/ethereum/go-ethereum/rollup/rcfg"
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 )
 
 func setupLatestEthContextTest() (*SyncService, *EthContext) {
-	service, _, _, _ := newTestSyncService(false)
+	service, _, _, _ := newTestSyncService(false, nil)
 	resp := &EthContext{
 		BlockNumber: uint64(10),
 		BlockHash:   common.Hash{},
@@ -97,7 +101,7 @@ func TestSyncServiceContextUpdated(t *testing.T) {
 // after the transaction enqueued event is emitted. Set `false` as
 // the argument to start as a sequencer
 func TestSyncServiceTransactionEnqueued(t *testing.T) {
-	service, txCh, _, err := newTestSyncService(false)
+	service, txCh, _, err := newTestSyncService(false, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +163,7 @@ func TestSyncServiceTransactionEnqueued(t *testing.T) {
 }
 
 func TestTransactionToTipNoIndex(t *testing.T) {
-	service, txCh, _, err := newTestSyncService(false)
+	service, txCh, _, err := newTestSyncService(false, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -210,7 +214,7 @@ func TestTransactionToTipNoIndex(t *testing.T) {
 }
 
 func TestTransactionToTipTimestamps(t *testing.T) {
-	service, txCh, _, err := newTestSyncService(false)
+	service, txCh, _, err := newTestSyncService(false, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +278,7 @@ func TestTransactionToTipTimestamps(t *testing.T) {
 }
 
 func TestApplyIndexedTransaction(t *testing.T) {
-	service, txCh, _, err := newTestSyncService(true)
+	service, txCh, _, err := newTestSyncService(true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +321,7 @@ func TestApplyIndexedTransaction(t *testing.T) {
 }
 
 func TestApplyBatchedTransaction(t *testing.T) {
-	service, txCh, _, err := newTestSyncService(true)
+	service, txCh, _, err := newTestSyncService(true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,7 +358,7 @@ func TestApplyBatchedTransaction(t *testing.T) {
 }
 
 func TestIsAtTip(t *testing.T) {
-	service, _, _, err := newTestSyncService(true)
+	service, _, _, err := newTestSyncService(true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -427,7 +431,7 @@ func TestIsAtTip(t *testing.T) {
 }
 
 func TestSyncQueue(t *testing.T) {
-	service, txCh, _, err := newTestSyncService(true)
+	service, txCh, _, err := newTestSyncService(true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,7 +488,7 @@ func TestSyncQueue(t *testing.T) {
 }
 
 func TestSyncServiceL1GasPrice(t *testing.T) {
-	service, _, _, err := newTestSyncService(true)
+	service, _, _, err := newTestSyncService(true, nil)
 	setupMockClient(service, map[string]interface{}{})
 
 	if err != nil {
@@ -500,22 +504,29 @@ func TestSyncServiceL1GasPrice(t *testing.T) {
 		t.Fatal("expected 0 gas price, got", gasBefore)
 	}
 
+	state, err := service.bc.State()
+	if err != nil {
+		t.Fatal("Cannot get state db")
+	}
+	l1GasPrice := big.NewInt(100000000000)
+	state.SetState(rcfg.L2GasPriceOracleAddress, rcfg.L1GasPriceSlot, common.BigToHash(l1GasPrice))
+	_, _ = state.Commit(false)
+
 	// Update the gas price
-	service.updateL1GasPrice()
+	service.updateL1GasPrice(state)
 
 	gasAfter, err := service.RollupGpo.SuggestL1GasPrice(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expect, _ := service.client.GetL1GasPrice()
-	if gasAfter.Cmp(expect) != 0 {
+	if gasAfter.Cmp(l1GasPrice) != 0 {
 		t.Fatal("expected 100 gas price, got", gasAfter)
 	}
 }
 
 func TestSyncServiceL2GasPrice(t *testing.T) {
-	service, _, _, err := newTestSyncService(true)
+	service, _, _, err := newTestSyncService(true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -534,7 +545,11 @@ func TestSyncServiceL2GasPrice(t *testing.T) {
 		t.Fatal("Cannot get state db")
 	}
 	l2GasPrice := big.NewInt(100000000000)
+<<<<<<< HEAD
 	state.SetState(l2GasPriceOracleAddress, l2GasPriceSlot, common.BigToHash(l2GasPrice))
+=======
+	state.SetState(rcfg.L2GasPriceOracleAddress, rcfg.L2GasPriceSlot, common.BigToHash(l2GasPrice))
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 	_, _ = state.Commit(false)
 
 	service.updateL2GasPrice(state)
@@ -549,6 +564,7 @@ func TestSyncServiceL2GasPrice(t *testing.T) {
 	}
 }
 
+<<<<<<< HEAD
 func TestSyncServiceMinL2GasPrice(t *testing.T) {
 	service, _, _, err := newTestSyncService(true)
 	if err != nil {
@@ -583,6 +599,10 @@ func TestSyncServiceMinL2GasPrice(t *testing.T) {
 
 func TestSyncServiceGasPriceOracleOwnerAddress(t *testing.T) {
 	service, _, _, err := newTestSyncService(true)
+=======
+func TestSyncServiceGasPriceOracleOwnerAddress(t *testing.T) {
+	service, _, _, err := newTestSyncService(true, nil)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -600,7 +620,11 @@ func TestSyncServiceGasPriceOracleOwnerAddress(t *testing.T) {
 
 	// Update the owner in the state to a non zero address
 	updatedOwner := common.HexToAddress("0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8")
+<<<<<<< HEAD
 	state.SetState(l2GasPriceOracleAddress, l2GasPriceOracleOwnerSlot, updatedOwner.Hash())
+=======
+	state.SetState(rcfg.L2GasPriceOracleAddress, rcfg.L2GasPriceOracleOwnerSlot, updatedOwner.Hash())
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 	hash, _ := state.Commit(false)
 
 	// Update the cache based on the latest state root
@@ -616,7 +640,11 @@ func TestSyncServiceGasPriceOracleOwnerAddress(t *testing.T) {
 // Only the gas price oracle owner can send 0 gas price txs
 // when fees are enforced
 func TestFeeGasPriceOracleOwnerTransactions(t *testing.T) {
+<<<<<<< HEAD
 	service, _, _, err := newTestSyncService(true)
+=======
+	service, _, _, err := newTestSyncService(true, nil)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -672,7 +700,7 @@ func TestFeeGasPriceOracleOwnerTransactions(t *testing.T) {
 
 // Pass true to set as a verifier
 func TestSyncServiceSync(t *testing.T) {
-	service, txCh, sub, err := newTestSyncService(true)
+	service, txCh, sub, err := newTestSyncService(true, nil)
 	defer sub.Unsubscribe()
 	if err != nil {
 		t.Fatal(err)
@@ -724,7 +752,7 @@ func TestSyncServiceSync(t *testing.T) {
 }
 
 func TestInitializeL1ContextPostGenesis(t *testing.T) {
-	service, _, _, err := newTestSyncService(true)
+	service, _, _, err := newTestSyncService(true, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -790,7 +818,11 @@ func TestInitializeL1ContextPostGenesis(t *testing.T) {
 
 func TestBadFeeThresholds(t *testing.T) {
 	// Create the deps for the sync service
+<<<<<<< HEAD
 	cfg, txPool, chain, db, err := newTestSyncServiceDeps(false)
+=======
+	cfg, txPool, chain, db, err := newTestSyncServiceDeps(false, nil)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -835,14 +867,25 @@ func TestBadFeeThresholds(t *testing.T) {
 	}
 }
 
+<<<<<<< HEAD
 func newTestSyncServiceDeps(isVerifier bool) (Config, *core.TxPool, *core.BlockChain, ethdb.Database, error) {
+=======
+func newTestSyncServiceDeps(isVerifier bool, alloc *common.Address) (Config, *core.TxPool, *core.BlockChain, ethdb.Database, error) {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 	chainCfg := params.AllEthashProtocolChanges
 	chainID := big.NewInt(420)
 	chainCfg.ChainID = chainID
 
 	engine := ethash.NewFaker()
 	db := rawdb.NewMemoryDatabase()
-	_ = new(core.Genesis).MustCommit(db)
+	genesis := new(core.Genesis)
+	if alloc != nil {
+		genesis.Alloc = make(core.GenesisAlloc)
+		genesis.Alloc[*alloc] = core.GenesisAccount{
+			Balance: new(big.Int).SetUint64(100000000000000),
+		}
+	}
+	_ = genesis.MustCommit(db)
 	chain, err := core.NewBlockChain(db, nil, chainCfg, engine, vm.Config{}, nil)
 	if err != nil {
 		return Config{}, nil, nil, nil, fmt.Errorf("Cannot initialize blockchain: %w", err)
@@ -861,8 +904,13 @@ func newTestSyncServiceDeps(isVerifier bool) (Config, *core.TxPool, *core.BlockC
 	return cfg, txPool, chain, db, nil
 }
 
+<<<<<<< HEAD
 func newTestSyncService(isVerifier bool) (*SyncService, chan core.NewTxsEvent, event.Subscription, error) {
 	cfg, txPool, chain, db, err := newTestSyncServiceDeps(isVerifier)
+=======
+func newTestSyncService(isVerifier bool, alloc *common.Address) (*SyncService, chan core.NewTxsEvent, event.Subscription, error) {
+	cfg, txPool, chain, db, err := newTestSyncServiceDeps(isVerifier, alloc)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("Cannot initialize syncservice: %w", err)
 	}
@@ -994,11 +1042,6 @@ func (m *mockClient) SyncStatus(backend Backend) (*SyncStatus, error) {
 	return &SyncStatus{
 		Syncing: false,
 	}, nil
-}
-
-func (m *mockClient) GetL1GasPrice() (*big.Int, error) {
-	price := big.NewInt(1)
-	return price, nil
 }
 
 func (m *mockClient) GetLatestEnqueueIndex() (*uint64, error) {

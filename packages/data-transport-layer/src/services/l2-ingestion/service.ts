@@ -1,6 +1,10 @@
 /* Imports: External */
 import { BaseService, Metrics } from '@eth-optimism/common-ts'
+<<<<<<< HEAD
 import { JsonRpcProvider } from '@ethersproject/providers'
+=======
+import { StaticJsonRpcProvider } from '@ethersproject/providers'
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 import { BigNumber } from 'ethers'
 import { LevelUp } from 'levelup'
 import axios from 'axios'
@@ -73,7 +77,7 @@ export class L2IngestionService extends BaseService<L2IngestionServiceOptions> {
 
   private state: {
     db: TransportDB
-    l2RpcProvider: JsonRpcProvider
+    l2RpcProvider: StaticJsonRpcProvider
   } = {} as any
 
   protected async _init(): Promise<void> {
@@ -89,7 +93,7 @@ export class L2IngestionService extends BaseService<L2IngestionServiceOptions> {
 
     this.state.l2RpcProvider =
       typeof this.options.l2RpcProvider === 'string'
-        ? new JsonRpcProvider(this.options.l2RpcProvider)
+        ? new StaticJsonRpcProvider(this.options.l2RpcProvider)
         : this.options.l2RpcProvider
   }
 

@@ -1,7 +1,11 @@
 /* Imports: External */
 import { constants, Contract, Signer } from 'ethers'
 import { BaseProvider } from '@ethersproject/providers'
+<<<<<<< HEAD
 import { getContractInterface } from '@metis.io/contracts'
+=======
+import { getContractInterface } from '@eth-optimism/contracts'
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
 export const loadContract = (
   name: string,
@@ -30,9 +34,8 @@ export const loadProxyFromManager = async (
 
 export interface OptimismContracts {
   Lib_AddressManager: Contract
-  OVM_StateCommitmentChain: Contract
-  OVM_CanonicalTransactionChain: Contract
-  OVM_ExecutionManager: Contract
+  StateCommitmentChain: Contract
+  CanonicalTransactionChain: Contract
 }
 
 export const loadOptimismContracts = async (
@@ -48,16 +51,12 @@ export const loadOptimismContracts = async (
 
   const inputs = [
     {
-      name: 'OVM_StateCommitmentChain',
-      interface: 'iOVM_StateCommitmentChain',
+      name: 'StateCommitmentChain',
+      interface: 'IStateCommitmentChain',
     },
     {
-      name: 'OVM_CanonicalTransactionChain',
-      interface: 'iOVM_CanonicalTransactionChain',
-    },
-    {
-      name: 'OVM_ExecutionManager',
-      interface: 'iOVM_ExecutionManager',
+      name: 'CanonicalTransactionChain',
+      interface: 'ICanonicalTransactionChain',
     },
   ]
 

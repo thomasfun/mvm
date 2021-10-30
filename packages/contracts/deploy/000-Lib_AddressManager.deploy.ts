@@ -1,10 +1,13 @@
 /* Imports: External */
 import { DeployFunction } from 'hardhat-deploy/dist/types'
 
+<<<<<<< HEAD
 /* Imports: Internal */
 import { registerAddress,registerAddressToMvm } from '../src/hardhat-deploy-ethers'
 import { predeploys } from '../src/predeploys'
 
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 const deployFn: DeployFunction = async (hre) => {
   const { deploy } = hre.deployments
   const { deployer } = await hre.getNamedAccounts()
@@ -13,6 +16,7 @@ const deployFn: DeployFunction = async (hre) => {
     from: deployer,
     args: [],
     log: true,
+<<<<<<< HEAD
   })
 
   await registerAddress({
@@ -42,6 +46,9 @@ const deployFn: DeployFunction = async (hre) => {
     hre,
     name: 'OVM_L2BatchMessageRelayer',
     address: (hre as any).deployConfig.ovmRelayerAddress,
+=======
+    waitConfirmations: (hre as any).deployConfig.numDeployConfirmations,
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   })
   
   const result =  await deploy('MVM_AddressManager', {
@@ -85,6 +92,6 @@ const deployFn: DeployFunction = async (hre) => {
   
 }
 
-deployFn.tags = ['Lib_AddressManager', 'required']
+deployFn.tags = ['Lib_AddressManager']
 
 export default deployFn

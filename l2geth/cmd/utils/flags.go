@@ -172,12 +172,6 @@ var (
 
 		EnvVar: "NETWORK_ID",
 	}
-	ChainIdFlag = cli.Uint64Flag{
-		Name:   "chainid",
-		Usage:  "Chain ID identifier",
-		Value:  420,
-		EnvVar: "CHAIN_ID",
-	}
 	TestnetFlag = cli.BoolFlag{
 		Name:  "testnet",
 		Usage: "Ropsten network: pre-configured proof-of-work test network",
@@ -1168,17 +1162,8 @@ func setEth1(ctx *cli.Context, cfg *rollup.Config) {
 // UsingOVM
 // setRollup configures the rollup
 func setRollup(ctx *cli.Context, cfg *rollup.Config) {
-	if ctx.GlobalIsSet(RollupAddressManagerOwnerAddressFlag.Name) {
-		addr := ctx.GlobalString(RollupAddressManagerOwnerAddressFlag.Name)
-		cfg.AddressManagerOwnerAddress = common.HexToAddress(addr)
-	}
 	if ctx.GlobalIsSet(RollupEnableVerifierFlag.Name) {
 		cfg.IsVerifier = true
-	}
-	if ctx.GlobalIsSet(RollupStateDumpPathFlag.Name) {
-		cfg.StateDumpPath = ctx.GlobalString(RollupStateDumpPathFlag.Name)
-	} else {
-		cfg.StateDumpPath = eth.DefaultConfig.Rollup.StateDumpPath
 	}
 	if ctx.GlobalIsSet(RollupMaxCalldataSizeFlag.Name) {
 		cfg.MaxCallDataSize = ctx.GlobalInt(RollupMaxCalldataSizeFlag.Name)
@@ -1769,6 +1754,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 		}
 		log.Info("Using developer account", "address", developer.Address)
 
+		//cfg.Genesis = core.DeveloperGenesisBlock(uint64(ctx.GlobalInt(DeveloperPeriodFlag.Name)), developer.Address)
 		// Allow for a configurable chain id
 		var chainID *big.Int
 		if ctx.GlobalIsSet(ChainIdFlag.Name) {

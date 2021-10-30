@@ -10,6 +10,10 @@ import {
   //AppendSequencerBatchParams,
   BatchContext,
   encodeAppendSequencerBatch,
+<<<<<<< HEAD
+=======
+  remove0x,
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 } from '@eth-optimism/core-utils'
 
 interface AppendSequencerBatchParams {
@@ -39,6 +43,10 @@ export class CanonicalTransactionChainContract extends Contract {
         from: await this.signer.getAddress(),
         data,
       })
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
       return {
         nonce,
         to,
@@ -60,7 +68,11 @@ export class CanonicalTransactionChainContract extends Contract {
  *********************/
 
 const APPEND_SEQUENCER_BATCH_METHOD_ID = keccak256(
+<<<<<<< HEAD
   Buffer.from('appendSequencerBatchByChainId()')
+=======
+  Buffer.from('appendSequencerBatch()')
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 ).slice(2, 10)
 
 const appendSequencerBatch = async (
@@ -78,5 +90,9 @@ const appendSequencerBatch = async (
 const getEncodedCalldata = (batch: AppendSequencerBatchParams): string => {
   const methodId = APPEND_SEQUENCER_BATCH_METHOD_ID
   const calldata = encodeAppendSequencerBatch(batch)
+<<<<<<< HEAD
   return '0x' + remove0x(methodId) + encodeHex(batch.chainId, 64) + remove0x(calldata)
+=======
+  return '0x' + remove0x(methodId) + remove0x(calldata)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 }

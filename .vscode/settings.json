@@ -6,7 +6,10 @@
   "eslint.workingDirectories": [
     {"directory": "packages/core-utils", "changeProcessCWD": true },
     {"directory": "packages/common-ts", "changeProcessCWD": true },
+<<<<<<< HEAD
     {"directory": "packages/hardhat-ovm", "changeProcessCWD": true },
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     {"directory": "packages/contracts", "changeProcessCWD": true },
     {"directory": "packages/data-transport-layer", "changeProcessCWD": true },
     {"directory": "packages/batch-submitter", "changeProcessCWD": true },

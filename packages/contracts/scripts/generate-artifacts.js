@@ -15,9 +15,12 @@ const fs = require('fs')
   const evmArtifactPaths = getContractJsonFiles(
     path.resolve(__dirname, `../artifacts/contracts`)
   )
+<<<<<<< HEAD
   const ovmArtifactPaths = getContractJsonFiles(
     path.resolve(__dirname, `../artifacts-ovm/contracts`)
   )
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
   const content = `
   /* eslint-disable @typescript-eslint/no-var-requires, no-empty */
@@ -26,6 +29,7 @@ const fs = require('fs')
   DO NOT EDIT.
   */
 
+<<<<<<< HEAD
   ${ovmArtifactPaths
     .map((artifactPath) => {
       const artifact = require(artifactPath)
@@ -38,6 +42,8 @@ const fs = require('fs')
       `
     })
     .join('\n')}
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   ${evmArtifactPaths
     .map((artifactPath) => {
       const artifact = require(artifactPath)
@@ -51,6 +57,7 @@ const fs = require('fs')
     })
     .join('\n')}
 
+<<<<<<< HEAD
   export const getContractArtifact = (name: string, ovm: boolean): any => {
     if (ovm) {
       return {
@@ -71,6 +78,17 @@ const fs = require('fs')
           .join(',\n')}
       }[name]
     }
+=======
+  export const getContractArtifact = (name: string): any => {
+    return {
+      ${evmArtifactPaths
+        .map((artifactPath) => {
+          const artifact = require(artifactPath)
+          return `${artifact.contractName}: ${artifact.contractName}`
+        })
+        .join(',\n')}
+    }[name]
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   }
   `
 

@@ -28,7 +28,11 @@ import { L1DataTransportServiceOptions } from '../main/service'
 export interface L1TransportServerOptions
   extends L1DataTransportServiceOptions {
   db: LevelUp
+<<<<<<< HEAD
   dbs: TransportDBMapHolder
+=======
+  metrics: Metrics
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 }
 
 const optionSettings = {
@@ -276,7 +280,12 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
             highestL2BlockNumber = await db.getHighestL2BlockNumber()
             break
           case 'l2':
+<<<<<<< HEAD
             currentL2Block = await db.getLatestUnconfirmedTransaction()
+=======
+            currentL2Block =
+              await this.state.db.getLatestUnconfirmedTransaction()
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
             highestL2BlockNumber =
               (await db.getHighestSyncedUnconfirmedBlock()) - 1
             break
@@ -544,11 +553,20 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
           }
         }
 
+<<<<<<< HEAD
         const transactions = await db.getFullTransactionsByIndexRange(
           BigNumber.from(batch.prevTotalElements).toNumber(),
           BigNumber.from(batch.prevTotalElements).toNumber() +
           BigNumber.from(batch.size).toNumber()
         )
+=======
+        const transactions =
+          await this.state.db.getFullTransactionsByIndexRange(
+            BigNumber.from(batch.prevTotalElements).toNumber(),
+            BigNumber.from(batch.prevTotalElements).toNumber() +
+              BigNumber.from(batch.size).toNumber()
+          )
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
         return {
           batch,
@@ -574,11 +592,20 @@ export class L1TransportServer extends BaseService<L1TransportServerOptions> {
           }
         }
 
+<<<<<<< HEAD
         const transactions = await db.getFullTransactionsByIndexRange(
           BigNumber.from(batch.prevTotalElements).toNumber(),
           BigNumber.from(batch.prevTotalElements).toNumber() +
           BigNumber.from(batch.size).toNumber()
         )
+=======
+        const transactions =
+          await this.state.db.getFullTransactionsByIndexRange(
+            BigNumber.from(batch.prevTotalElements).toNumber(),
+            BigNumber.from(batch.prevTotalElements).toNumber() +
+              BigNumber.from(batch.size).toNumber()
+          )
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
         return {
           batch,

@@ -71,10 +71,17 @@ const networks = {
 
     proxiedContracts = []
     for (let i = 0; i < contracts.length; i++) {
+<<<<<<< HEAD
       if (contracts[i] === 'OVM_L1CrossDomainMessenger') {
         proxiedContracts.push(contracts.splice(i, 1)[0])
       }
       if (contracts[i] === 'OVM_L1ETHGateway') {
+=======
+      if (contracts[i] === 'L1CrossDomainMessenger') {
+        proxiedContracts.push(contracts.splice(i, 1)[0])
+      }
+      if (contracts[i] === 'L1StandardBridge') {
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         proxiedContracts.push(contracts.splice(i, 1)[0])
       }
     }

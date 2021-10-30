@@ -279,7 +279,11 @@ func (tx *stTransaction) toMessage(ps stPostState) (core.Message, error) {
 		return nil, fmt.Errorf("invalid tx data %q", dataHex)
 	}
 
+<<<<<<< HEAD
 	msg := types.NewMessage(from, to, tx.Nonce, value, gasLimit, tx.GasPrice, data, true, nil, nil, types.QueueOriginSequencer)
+=======
+	msg := types.NewMessage(from, to, tx.Nonce, value, gasLimit, tx.GasPrice, data, true, nil, 0, types.QueueOriginSequencer)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 	return msg, nil
 }
 

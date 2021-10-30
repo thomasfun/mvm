@@ -4,8 +4,13 @@
   "license": "MIT",
   "private": true,
   "devDependencies": {
+<<<<<<< HEAD
     "@types/prettier": "2.2.1",
     "prettier": "^2.2.1",
+=======
+    "@types/prettier": "^2.2.3",
+    "prettier": "^2.3.1",
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     "lint-staged": "11.0.0"
   },
   "scripts": {

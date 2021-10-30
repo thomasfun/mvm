@@ -8,7 +8,10 @@ import { L1IngestionService } from '../l1-ingestion/service'
 import { L1TransportServer } from '../server/service'
 import { validators } from '../../utils'
 import { L2IngestionService } from '../l2-ingestion/service'
+<<<<<<< HEAD
 import { TransportDB, TransportDBMapHolder, TransportDBMap} from '../../db/transport-db'
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 import { Counter } from 'prom-client'
 
 export interface L1DataTransportServiceOptions {
@@ -72,6 +75,21 @@ export class L1DataTransportService extends BaseService<L1DataTransportServiceOp
     await this.state.db.open()
     this.state.dbs = new TransportDBMapHolder(this.options.dbPath)
     
+    this.state.metrics = new Metrics({
+      labels: {
+        environment: this.options.nodeEnv,
+        network: this.options.ethNetworkName,
+        release: this.options.release,
+        service: this.name,
+      }
+    })
+
+    this.state.failureCounter = new this.state.metrics.client.Counter({
+      name: 'data_transport_layer_main_service_failures',
+      help: 'Counts the number of times that the main service fails',
+      registers: [this.state.metrics.registry],
+    })
+
     this.state.metrics = new Metrics({
       labels: {
         environment: this.options.nodeEnv,

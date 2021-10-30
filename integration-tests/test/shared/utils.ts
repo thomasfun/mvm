@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 import { expect } from 'chai'
 
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 /* Imports: External */
 import {
   Contract,
@@ -84,7 +87,11 @@ export const getAddressManager = (provider: any) => {
 
 // Gets the bridge contract
 export const getL1Bridge = async (wallet: Wallet, AddressManager: Contract) => {
+<<<<<<< HEAD
   const l1BridgeInterface = getContractInterface('OVM_L1StandardBridge')
+=======
+  const l1BridgeInterface = getContractInterface('L1StandardBridge')
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   const ProxyBridgeAddress = await AddressManager.getAddress(
     'Proxy__OVM_L1StandardBridge'
   )
@@ -96,11 +103,16 @@ export const getL1Bridge = async (wallet: Wallet, AddressManager: Contract) => {
     throw new Error('Proxy__OVM_L1StandardBridge not found')
   }
 
+<<<<<<< HEAD
   const OVM_L1StandardBridge = new Contract(
+=======
+  const L1StandardBridge = new Contract(
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     ProxyBridgeAddress,
     l1BridgeInterface,
     wallet
   )
+<<<<<<< HEAD
   return OVM_L1StandardBridge
 }
 
@@ -113,6 +125,20 @@ export const getL2Bridge = async (wallet: Wallet) => {
     wallet
   )
   return OVM_L2StandardBridge
+=======
+  return L1StandardBridge
+}
+
+export const getL2Bridge = async (wallet: Wallet) => {
+  const L2BridgeInterface = getContractInterface('L2StandardBridge')
+
+  const L2StandardBridge = new Contract(
+    predeploys.L2StandardBridge,
+    L2BridgeInterface,
+    wallet
+  )
+  return L2StandardBridge
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 }
 
 export const getOvmEth = (wallet: Wallet) => {
@@ -148,12 +174,17 @@ export const encodeSolidityRevertMessage = (_reason: string): string => {
 
 export const DEFAULT_TRANSACTION = {
   to: '0x' + '1234'.repeat(10),
+<<<<<<< HEAD
   gasLimit: 33600000000001,
+=======
+  gasLimit: 8_000_000,
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   gasPrice: 0,
   data: '0x',
   value: 0,
 }
 
+<<<<<<< HEAD
 interface percentDeviationRange {
   upperPercentDeviation: number
   lowerPercentDeviation?: number
@@ -190,6 +221,8 @@ export const expectApprox = (
   ).to.be.true
 }
 
+=======
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 export const waitForL2Geth = async (
   provider: providers.JsonRpcProvider
 ): Promise<providers.JsonRpcProvider> => {

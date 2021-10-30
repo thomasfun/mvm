@@ -22,7 +22,11 @@ import {
 } from '../transaction-chain-contract'
 
 import { BlockRange, BatchSubmitter } from '.'
+<<<<<<< HEAD
 import { TransactionSubmitter } from '../utils/'
+=======
+import { TransactionSubmitter } from '../utils'
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
 export interface AutoFixBatchOptions {
   fixDoublePlayedDeposits: boolean
@@ -35,6 +39,10 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
   protected l2ChainId: number
   protected syncing: boolean
   private autoFixBatchOptions: AutoFixBatchOptions
+<<<<<<< HEAD
+=======
+  private validateBatch: boolean
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   private transactionSubmitter: TransactionSubmitter
   private gasThresholdInGwei: number
 
@@ -52,6 +60,7 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
     gasThresholdInGwei: number,
     transactionSubmitter: TransactionSubmitter,
     blockOffset: number,
+    validateBatch: boolean,
     logger: Logger,
     metrics: Metrics,
     autoFixBatchOptions: AutoFixBatchOptions = {
@@ -76,9 +85,21 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
       logger,
       metrics
     )
+<<<<<<< HEAD
     this.autoFixBatchOptions = autoFixBatchOptions
     this.gasThresholdInGwei = gasThresholdInGwei
     this.transactionSubmitter = transactionSubmitter
+=======
+    this.validateBatch = validateBatch
+    this.autoFixBatchOptions = autoFixBatchOptions
+    this.gasThresholdInGwei = gasThresholdInGwei
+    this.transactionSubmitter = transactionSubmitter
+
+    this.logger.info('Batch validation options', {
+      autoFixBatchOptions,
+      validateBatch
+    })
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
   }
 
   /*****************************
@@ -197,8 +218,17 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
       return
     }
 
+<<<<<<< HEAD
     const [batchParams, wasBatchTruncated] =
       await this._generateSequencerBatchParams(startBlock, endBlock)
+=======
+    const params = await this._generateSequencerBatchParams(startBlock, endBlock)
+    if (!params) {
+      throw new Error(`Cannot create sequencer batch with params start ${startBlock} and end ${endBlock}`)
+    }
+
+    const [batchParams, wasBatchTruncated] = params
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     const batchSizeInBytes = encodeAppendSequencerBatch(batchParams).length / 2
     this.logger.debug('Sequencer batch generated', {
       batchSizeInBytes,
@@ -258,12 +288,23 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
       { concurrency: 100 }
     )
 
-    // Fix our batches if we are configured to. TODO: Remove this.
+    // Fix our batches if we are configured to. This will not
+    // modify the batch unless an autoFixBatchOption is set
     batch = await this._fixBatch(batch)
+<<<<<<< HEAD
     if (!(await this._validateBatch(batch))) {
       this.metrics.malformedBatches.inc()
       return
+=======
+    if (this.validateBatch) {
+      this.logger.info('Validating batch')
+      if (!(await this._validateBatch(batch))) {
+        this.metrics.malformedBatches.inc()
+        return
+      }
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     }
+
     let sequencerBatchParams = await this._getSequencerBatchParams(
       startBlock,
       batch
@@ -351,7 +392,11 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
 
     let isEqual = true
     const [queueEleHash, timestamp, blockNumber] =
+<<<<<<< HEAD
       await this.chainContract.getQueueElementByChainId(this.l2ChainId,queueIndex)
+=======
+      await this.chainContract.getQueueElement(queueIndex)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
     // TODO: Verify queue element hash equality. The queue element hash can be computed with:
     // keccak256( abi.encode( msg.sender, _target, _gasLimit, _data))
@@ -415,8 +460,15 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
       for (const ele of b) {
         // Look for skipped deposits
         while (true) {
+<<<<<<< HEAD
           const pendingQueueElements = await this.chainContract.getNumPendingQueueElementsByChainId(this.l2ChainId)
           const nextRemoteQueueElements = await this.chainContract.getNextQueueIndexByChainId(this.l2ChainId)
+=======
+          const pendingQueueElements =
+            await this.chainContract.getNumPendingQueueElements()
+          const nextRemoteQueueElements =
+            await this.chainContract.getNextQueueIndex()
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
           const totalQueueElements =
             pendingQueueElements + nextRemoteQueueElements
           // No more queue elements so we clearly haven't skipped anything
@@ -424,7 +476,11 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
             break
           }
           const [queueEleHash, timestamp, blockNumber] =
+<<<<<<< HEAD
             await this.chainContract.getQueueElementByChainId(this.l2ChainId,nextQueueIndex)
+=======
+            await this.chainContract.getQueueElement(nextQueueIndex)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
           if (timestamp < ele.timestamp || blockNumber < ele.blockNumber) {
             this.logger.warn('Fixing skipped deposit', {
@@ -477,13 +533,24 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
       // updateLatestTimestampAndBlockNumber is a helper which updates
       // the latest timestamp and block number based on the pending queue elements.
       const updateLatestTimestampAndBlockNumber = async () => {
+<<<<<<< HEAD
         const pendingQueueElements = await this.chainContract.getNumPendingQueueElementsByChainId(this.l2ChainId)
         const nextRemoteQueueElements = await this.chainContract.getNextQueueIndexByChainId(this.l2ChainId)
+=======
+        const pendingQueueElements =
+          await this.chainContract.getNumPendingQueueElements()
+        const nextRemoteQueueElements =
+          await this.chainContract.getNextQueueIndex()
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         const totalQueueElements =
           pendingQueueElements + nextRemoteQueueElements
         if (nextQueueIndex < totalQueueElements) {
           const [queueEleHash, queueTimestamp, queueBlockNumber] =
+<<<<<<< HEAD
             await this.chainContract.getQueueElementByChainId(this.l2ChainId,nextQueueIndex)
+=======
+            await this.chainContract.getQueueElement(nextQueueIndex)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
           latestTimestamp = queueTimestamp
           latestBlockNumber = queueBlockNumber
         } else {
@@ -549,12 +616,15 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
     // NOTE: It is unsafe to combine multiple autoFix options.
     // If you must combine them, manually verify the output before proceeding.
     if (this.autoFixBatchOptions.fixDoublePlayedDeposits) {
+      this.logger.info('Fixing double played deposits')
       batch = await fixDoublePlayedDeposits(batch)
     }
     if (this.autoFixBatchOptions.fixMonotonicity) {
+      this.logger.info('Fixing monotonicity')
       batch = await fixMonotonicity(batch)
     }
     if (this.autoFixBatchOptions.fixSkippedDeposits) {
+      this.logger.info('Fixing skipped deposits')
       batch = await fixSkippedDeposits(batch)
     }
     return batch
@@ -570,12 +640,17 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
       this.signer.provider
     )
 
+<<<<<<< HEAD
     const addr = await manager.getAddress(
       'OVM_ChainStorageContainer-CTC-batches'
     )
+=======
+    const addr = await manager.getAddress('ChainStorageContainer-CTC-batches')
+
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     const container = new Contract(
       addr,
-      getNewContractInterface('iOVM_ChainStorageContainer'),
+      getNewContractInterface('IChainStorageContainer'),
       this.signer.provider
     )
 
@@ -602,7 +677,11 @@ export class TransactionBatchSubmitter extends BatchSubmitter {
     queueElement: BatchElement
   ): Promise<BatchElement> {
     const [queueEleHash, timestamp, blockNumber] =
+<<<<<<< HEAD
       await this.chainContract.getQueueElementByChainId(this.l2ChainId,queueIndex)
+=======
+      await this.chainContract.getQueueElement(queueIndex)
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 
     if (
       timestamp > queueElement.timestamp &&

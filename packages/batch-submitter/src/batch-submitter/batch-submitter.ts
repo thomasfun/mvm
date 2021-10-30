@@ -13,12 +13,19 @@ import {
 import { Gauge, Histogram, Counter } from 'prom-client'
 import { RollupInfo, sleep } from '@eth-optimism/core-utils'
 import { Logger, Metrics } from '@eth-optimism/common-ts'
+<<<<<<< HEAD
 import { getContractFactory } from '@metis.io/contracts'
 
 
 /* Internal Imports */
 import { TxSubmissionHooks } from '../utils/'
 
+=======
+import { getContractFactory } from 'old-contracts'
+/* Internal Imports */
+import { TxSubmissionHooks } from '..'
+
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 export interface BlockRange {
   start: number
   end: number
@@ -139,11 +146,9 @@ export abstract class BatchSubmitter {
     const addressManager = (
       await getContractFactory('Lib_AddressManager', this.signer)
     ).attach(this.addressManagerAddress)
-    const sccAddress = await addressManager.getAddress(
-      'OVM_StateCommitmentChain'
-    )
+    const sccAddress = await addressManager.getAddress('StateCommitmentChain')
     const ctcAddress = await addressManager.getAddress(
-      'OVM_CanonicalTransactionChain'
+      'CanonicalTransactionChain'
     )
     return {
       ctcAddress,

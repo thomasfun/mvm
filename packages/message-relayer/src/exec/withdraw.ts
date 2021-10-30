@@ -6,7 +6,11 @@
 
 /* Imports: External */
 import { ethers } from 'ethers'
+<<<<<<< HEAD
 import { predeploys, getContractInterface } from '@metis.io/contracts'
+=======
+import { predeploys, getContractInterface } from '@eth-optimism/contracts'
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
 import { sleep } from '@eth-optimism/core-utils'
 import dotenv from 'dotenv'
 
@@ -36,7 +40,11 @@ const main = async () => {
 
   const l1CrossDomainMessenger = new ethers.Contract(
     l1CrossDomainMessengerAddress,
+<<<<<<< HEAD
     getContractInterface('OVM_L1CrossDomainMessenger'),
+=======
+    getContractInterface('L1CrossDomainMessenger'),
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
     l1Wallet
   )
 
@@ -48,7 +56,11 @@ const main = async () => {
         l1RpcProviderUrl,
         l2RpcProviderUrl,
         l1StateCommitmentChainAddress,
+<<<<<<< HEAD
         predeploys.OVM_L2CrossDomainMessenger,
+=======
+        predeploys.L2CrossDomainMessenger,
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
         l2TransactionHash
       )
       break

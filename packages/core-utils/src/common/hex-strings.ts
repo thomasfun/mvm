@@ -1,5 +1,5 @@
 /* Imports: External */
-import { BigNumber } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 
 /**
  * Removes "0x" from start of a string if it exists.
@@ -80,3 +80,18 @@ export const padHexString = (str: string, length: number): string => {
 
 export const encodeHex = (val: any, len: number) =>
   remove0x(BigNumber.from(val).toHexString()).padStart(len, '0')
+<<<<<<< HEAD
+=======
+
+export const hexStringEquals = (stringA: string, stringB: string): boolean => {
+  if (!ethers.utils.isHexString(stringA)) {
+    throw new Error(`input is not a hex string: ${stringA}`)
+  }
+
+  if (!ethers.utils.isHexString(stringB)) {
+    throw new Error(`input is not a hex string: ${stringB}`)
+  }
+
+  return stringA.toLowerCase() === stringB.toLowerCase()
+}
+>>>>>>> 2c741af18943321173153180956f4bf84445a337
