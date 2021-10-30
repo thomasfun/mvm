@@ -2,21 +2,12 @@
 pragma solidity ^0.8.9;
 
 /* Interface Imports */
-<<<<<<< HEAD:packages/contracts/contracts/optimistic-ethereum/iOVM/bridge/messaging/iOVM_L2CrossDomainMessenger.sol
-import { iOVM_CrossDomainMessenger } from "./iOVM_CrossDomainMessenger.sol";
-=======
 import { ICrossDomainMessenger } from "../../libraries/bridge/ICrossDomainMessenger.sol";
->>>>>>> 2c741af18943321173153180956f4bf84445a337:packages/contracts/contracts/L2/messaging/IL2CrossDomainMessenger.sol
 
 /**
  * @title IL2CrossDomainMessenger
  */
-<<<<<<< HEAD:packages/contracts/contracts/optimistic-ethereum/iOVM/bridge/messaging/iOVM_L2CrossDomainMessenger.sol
-interface iOVM_L2CrossDomainMessenger is iOVM_CrossDomainMessenger {
-
-=======
 interface IL2CrossDomainMessenger is ICrossDomainMessenger {
->>>>>>> 2c741af18943321173153180956f4bf84445a337:packages/contracts/contracts/L2/messaging/IL2CrossDomainMessenger.sol
     /********************
      * Public Functions *
      ********************/

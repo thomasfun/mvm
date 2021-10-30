@@ -55,4 +55,5 @@ interface ICrossDomainMessenger {
         bytes calldata _message,
         uint32 _gasLimit
     ) external payable;
+
 }

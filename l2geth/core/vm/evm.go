@@ -252,7 +252,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	}
 	ret, err = run(evm, contract, input, false)
 
-
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
@@ -485,27 +484,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 
 // Create creates a new contract using code as deployment code.
 func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
-<<<<<<< HEAD
-	if !UsingOVM {
-		// OVM_DISABLED
-		contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
-	} else {
-		// OVM_ENABLED
-		if caller.Address() != evm.Context.OvmExecutionManager.Address {
-			log.Error("Creation called by non-Execution Manager contract! This should never happen.", "Offending address", caller.Address().Hex())
-			return nil, caller.Address(), 0, ErrOvmCreationFailed
-		}
-
-		contractAddr = evm.OvmADDRESS()
-
-		if evm.Context.EthCallSender == nil {
-			log.Debug("[EM] Creating contract.", "New contract address", contractAddr.Hex(), "Caller Addr", caller.Address().Hex(), "Caller nonce", evm.StateDB.GetNonce(caller.Address()))
-		}
-	}
-
-=======
 	contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
->>>>>>> 2c741af18943321173153180956f4bf84445a337
 	return evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr)
 }
 
@@ -515,27 +494,7 @@ func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.I
 // instead of the usual sender-and-nonce-hash as the address where the contract is initialized at.
 func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
 	codeAndHash := &codeAndHash{code: code}
-<<<<<<< HEAD
-	if !UsingOVM {
-		// OVM_DISABLED
-		contractAddr = crypto.CreateAddress2(caller.Address(), common.BigToHash(salt), codeAndHash.Hash().Bytes())
-	} else {
-		// OVM_ENABLED
-		if caller.Address() != evm.Context.OvmExecutionManager.Address {
-			log.Error("Creation called by non-Execution Manager contract! This should never happen.", "Offending address", caller.Address().Hex())
-			return nil, caller.Address(), 0, ErrOvmCreationFailed
-		}
-
-		contractAddr = evm.OvmADDRESS()
-
-		if evm.Context.EthCallSender == nil {
-			log.Debug("[EM] Creating contract [create2].", "New contract address", contractAddr.Hex(), "Caller Addr", caller.Address().Hex(), "Caller nonce", evm.StateDB.GetNonce(caller.Address()))
-		}
-	}
-
-=======
 	contractAddr = crypto.CreateAddress2(caller.Address(), common.BigToHash(salt), codeAndHash.Hash().Bytes())
->>>>>>> 2c741af18943321173153180956f4bf84445a337
 	return evm.create(caller, codeAndHash, gas, endowment, contractAddr)
 }
 

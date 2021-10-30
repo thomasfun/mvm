@@ -28,12 +28,18 @@ contract ChainStorageContainer is IChainStorageContainer, Lib_AddressResolver {
 
     using Lib_Buffer for Lib_Buffer.Buffer;
 
+    /**************
+     *  constant  *
+     **************/
+    uint256 constant public DEFAULT_CHAINID = 1088;
+    
+    
     /*************
      * Variables *
      *************/
 
     string public owner;
-    Lib_Buffer.Buffer internal buffer;
+    mapping(uint256=>Lib_Buffer.Buffer) internal buffers;
 
     /***************
      * Constructor *
@@ -69,49 +75,135 @@ contract ChainStorageContainer is IChainStorageContainer, Lib_AddressResolver {
      * @inheritdoc IChainStorageContainer
      */
     function setGlobalMetadata(bytes27 _globalMetadata) public onlyOwner {
-        return buffer.setExtraData(_globalMetadata);
+        return setGlobalMetadataByChainId(DEFAULT_CHAINID,_globalMetadata);
     }
-
+    
+    /**
+     * @inheritdoc IChainStorageContainer
+     */
+    function setGlobalMetadataByChainId(
+        uint256 _chainId,
+        bytes27 _globalMetadata
+    )
+        override
+        public
+        onlyOwner
+    {
+        return buffers[_chainId].setExtraData(_globalMetadata);
+    }
+    
     /**
      * @inheritdoc IChainStorageContainer
      */
     function getGlobalMetadata() public view returns (bytes27) {
-        return buffer.getExtraData();
+        return getGlobalMetadataByChainId(DEFAULT_CHAINID);
+    }
+    
+    function getGlobalMetadataByChainId(uint256 _chainId)
+        override
+        public
+        view
+        returns (
+            bytes27
+        )
+    {
+        return buffers[_chainId].getExtraData();
     }
 
     /**
      * @inheritdoc IChainStorageContainer
      */
     function length() public view returns (uint256) {
-        return uint256(buffer.getLength());
+        return lengthByChainId(DEFAULT_CHAINID);
+    }
+    
+    function lengthByChainId(uint256 _chainId)
+        override
+        public
+        view
+        returns (
+            uint256
+        )
+    {
+        return uint256(buffers[_chainId].getLength());
     }
 
     /**
      * @inheritdoc IChainStorageContainer
      */
     function push(bytes32 _object) public onlyOwner {
-        buffer.push(_object);
+        pushByChainId(DEFAULT_CHAINID,_object);
+    }
+    
+    function pushByChainId(
+        uint256 _chainId,
+        bytes32 _object
+    )
+        override
+        public
+        onlyOwner
+    {
+        buffers[_chainId].push(_object);
     }
 
     /**
      * @inheritdoc IChainStorageContainer
      */
     function push(bytes32 _object, bytes27 _globalMetadata) public onlyOwner {
-        buffer.push(_object, _globalMetadata);
+        pushByChainId(DEFAULT_CHAINID,_object,_globalMetadata);
+    }
+    
+    function pushByChainId(
+        uint256 _chainId,
+        bytes32 _object,
+        bytes27 _globalMetadata
+    )
+        override
+        public
+        onlyOwner
+    {
+        buffers[_chainId].push(_object, _globalMetadata);
     }
 
     /**
      * @inheritdoc IChainStorageContainer
      */
     function get(uint256 _index) public view returns (bytes32) {
-        return buffer.get(uint40(_index));
+        return getByChainId(DEFAULT_CHAINID,_index);
+    }
+    
+    function getByChainId(
+        uint256 _chainId,
+        uint256 _index
+    )
+        override
+        public
+        view
+        returns (
+            bytes32
+        )
+    {
+        return buffers[_chainId].get(uint40(_index));
     }
 
     /**
      * @inheritdoc IChainStorageContainer
      */
     function deleteElementsAfterInclusive(uint256 _index) public onlyOwner {
-        buffer.deleteElementsAfterInclusive(uint40(_index));
+        deleteElementsAfterInclusiveByChainId(DEFAULT_CHAINID,_index);
+    }
+    
+    function deleteElementsAfterInclusiveByChainId(
+        uint256 _chainId,
+        uint256 _index
+    )
+        override
+        public
+        onlyOwner
+    {
+        buffers[_chainId].deleteElementsAfterInclusive(
+            uint40(_index)
+        );
     }
 
     /**
@@ -121,6 +213,21 @@ contract ChainStorageContainer is IChainStorageContainer, Lib_AddressResolver {
         public
         onlyOwner
     {
-        buffer.deleteElementsAfterInclusive(uint40(_index), _globalMetadata);
+        deleteElementsAfterInclusiveByChainId(DEFAULT_CHAINID,_index,_globalMetadata);
+    }
+    
+    function deleteElementsAfterInclusiveByChainId(
+        uint256 _chainId,
+        uint256 _index,
+        bytes27 _globalMetadata
+    )
+        override
+        public
+        onlyOwner
+    {
+        buffers[_chainId].deleteElementsAfterInclusive(
+            uint40(_index),
+            _globalMetadata
+        );
     }
 }

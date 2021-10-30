@@ -880,6 +880,14 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 				timestamp = tx.L1Timestamp()
 			}
 		}
+<<<<<<< HEAD
+=======
+		log.Debug("Test: before EncodeSimulatedMessage")
+		msg, err = core.EncodeSimulatedMessage(msg, timestamp, blockNumber, executionManager, stateManager)
+		if err != nil {
+			return nil, 0, false, err
+		}
+>>>>>>> 7a4a151fc4192c96ee1a08f870e0711de36bbc13
 	}
 
 	// Create new call message
@@ -912,6 +920,15 @@ func DoCall(ctx context.Context, b Backend, args CallArgs, blockNrOrHash rpc.Blo
 	// Setup the gas pool (also for unmetered requests)
 	// and apply the message.
 	gp := new(core.GasPool).AddGas(math.MaxUint64)
+<<<<<<< HEAD
+=======
+	if vm.UsingOVM {
+		evm.Context.EthCallSender = &addr
+		evm.Context.BlockNumber = blockNumber
+		evm.Context.Time = timestamp
+	}
+	log.Debug("Test: before ApplyMessage")
+>>>>>>> 7a4a151fc4192c96ee1a08f870e0711de36bbc13
 	res, gas, failed, err := core.ApplyMessage(evm, msg, gp)
 	if err := vmError(); err != nil {
 		return nil, 0, false, err
@@ -961,6 +978,10 @@ func DoEstimateGas(ctx context.Context, b Backend, args CallArgs, blockNrOrHash 
 		hi  uint64
 		cap uint64
 	)
+
+	// NOTE 20211022 test gas
+	log.Debug("Test: EstimateGas", "args gas", args.Gas, "tx gas", params.TxGas, "gas cap", gasCap)
+
 	if args.Gas != nil && uint64(*args.Gas) >= params.TxGas {
 		hi = uint64(*args.Gas)
 	} else {
@@ -970,6 +991,7 @@ func DoEstimateGas(ctx context.Context, b Backend, args CallArgs, blockNrOrHash 
 			return 0, err
 		}
 		hi = block.GasLimit()
+		log.Debug("Test: EstimateGas, hi set to block gas limit", "hi", hi)
 	}
 	if gasCap != nil && hi > gasCap.Uint64() {
 		log.Warn("Caller gas above allowance, capping", "requested", hi, "cap", gasCap)
@@ -999,10 +1021,13 @@ func DoEstimateGas(ctx context.Context, b Backend, args CallArgs, blockNrOrHash 
 		}
 		return true, res
 	}
+	// ti := 0
 	// Execute the binary search and hone in on an executable gas limit
 	for lo+1 < hi {
 		mid := (hi + lo) / 2
 		ok, _ := executable(mid)
+		// ti++
+		// log.Debug("Test: executable", "times", ti, "lo", lo, "hi", hi, "mid", mid, "ok", ok)
 
 		if !ok {
 			lo = mid
@@ -1573,6 +1598,22 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 
 // SubmitTransaction is a helper function that submits tx to txPool and logs a message.
 func SubmitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (common.Hash, error) {
+	nodeHTTPModules := b.NodeHTTPModules()
+	if nodeHTTPModules == nil || len(nodeHTTPModules) == 0 {
+		return common.Hash{}, errors.New("Not support submit transaction")
+	}
+
+	canSubmit := false
+	for _, httpModule := range nodeHTTPModules {
+		if httpModule == "rollup" {
+			canSubmit = true
+			break
+		}
+	}
+	if !canSubmit {
+		return common.Hash{}, errors.New("Not support submit transaction")
+	}
+
 	if !tx.Protected() {
 		return common.Hash{}, errors.New("Cannot submit unprotected transaction")
 	}

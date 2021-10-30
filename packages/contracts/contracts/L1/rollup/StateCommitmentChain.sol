@@ -34,6 +34,7 @@ contract StateCommitmentChain is IStateCommitmentChain, Lib_AddressResolver, MVM
     
     uint256 public DEFAULT_CHAINID = 1088;
 
+
     /***************
      * Constructor *
      ***************/

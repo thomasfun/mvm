@@ -10,7 +10,8 @@ import { Lib_PredeployAddresses } from "../../libraries/constants/Lib_PredeployA
 /* Interface Imports */
 import { IL2CrossDomainMessenger } from "./IL2CrossDomainMessenger.sol";
 import { iOVM_L2ToL1MessagePasser } from "../predeploys/iOVM_L2ToL1MessagePasser.sol";
-
+import { OVM_DeployerWhitelist } from "../predeploys/OVM_DeployerWhitelist.sol";
+import { MVM_Coinbase } from "../../MVM/MVM_Coinbase.sol";
 /**
  * @title L2CrossDomainMessenger
  * @dev The L2 Cross Domain Messenger contract sends messages from L2 to L1, and is the entry point
@@ -37,6 +38,20 @@ contract L2CrossDomainMessenger is IL2CrossDomainMessenger {
         l1CrossDomainMessenger = _l1CrossDomainMessenger;
     }
 
+     /**********************
+     * Function Modifiers *
+     **********************/
+
+    modifier onlyWhitelisted() {
+        require(
+            OVM_DeployerWhitelist(Lib_PredeployAddresses.DEPLOYER_WHITELIST)
+               .isXDomainSenderAllowed(msg.sender),
+            // solhint-disable-next-line max-line-length
+            "L2 to L1 messages are restricted to whitelisted senders."
+        );
+        _;
+    }
+    
     /********************
      * Public Functions *
      ********************/
@@ -59,7 +74,7 @@ contract L2CrossDomainMessenger is IL2CrossDomainMessenger {
         address _target,
         bytes memory _message,
         uint32 _gasLimit
-    ) public {
+    ) public payable onlyWhitelisted {
         bytes memory xDomainCalldata = Lib_CrossDomainUtils.encodeXDomainCalldata(
             _target,
             msg.sender,
@@ -69,6 +84,10 @@ contract L2CrossDomainMessenger is IL2CrossDomainMessenger {
 
         sentMessages[keccak256(xDomainCalldata)] = true;
 
+        MVM_Coinbase(Lib_PredeployAddresses.MVM_COINBASE).transfer(
+                Lib_PredeployAddresses.SEQUENCER_FEE_WALLET,
+                msg.value);
+        
         // Actually send the message.
         iOVM_L2ToL1MessagePasser(Lib_PredeployAddresses.L2_TO_L1_MESSAGE_PASSER).passMessageToL1(
             xDomainCalldata

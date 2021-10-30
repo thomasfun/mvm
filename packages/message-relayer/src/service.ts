@@ -62,7 +62,9 @@ interface MessageRelayerOptions {
   useChainStore?: boolean,
 
   // user chain store mongo database url.
-  storeDbUrl?: string
+  storeDbUrl?: string,
+
+  relayNumber?: number
 }
 
 const optionSettings = {
@@ -74,7 +76,8 @@ const optionSettings = {
   l1StartOffset: { default: 0 },
   getLogsInterval: { default: 2000 },
   useChainStore: { default: false },
-  storeDbUrl: { default: "" }
+  storeDbUrl: { default: "" },
+  relayNumber: { default: 100 }
 }
 
 export class MessageRelayerService extends BaseService<MessageRelayerOptions> {
@@ -103,7 +106,8 @@ export class MessageRelayerService extends BaseService<MessageRelayerOptions> {
       l2BlockOffset: this.options.l2BlockOffset,
       getLogsInterval: this.options.getLogsInterval,
       useChainStore: this.options.useChainStore,
-      storeDbUrl: this.options.storeDbUrl
+      storeDbUrl: this.options.storeDbUrl,
+      relayNumber: this.options.relayNumber
     })
     // Need to improve this, sorry.
     this.state = {} as any
@@ -237,7 +241,7 @@ export class MessageRelayerService extends BaseService<MessageRelayerOptions> {
             this.state.nextUnfinalizedTxHeight -
             this.state.lastFinalizedTxHeight
 
-          if (numTransactionsToProcess > 1000) {
+          if (numTransactionsToProcess > this.options.relayNumber) {
             break
           }
         }
