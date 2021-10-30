@@ -48,6 +48,7 @@ contract OVM_StateTransitionerFactory is iOVM_StateTransitionerFactory, Lib_Addr
      * @return New OVM_StateTransitioner instance.
      */
     function create(
+        uint256 _chainId,
         address _libAddressManager,
         uint256 _stateTransitionIndex,
         bytes32 _preStateRoot,
@@ -65,6 +66,7 @@ contract OVM_StateTransitionerFactory is iOVM_StateTransitionerFactory, Lib_Addr
         );
 
         return new OVM_StateTransitioner(
+            _chainId,
             _libAddressManager,
             _stateTransitionIndex,
             _preStateRoot,

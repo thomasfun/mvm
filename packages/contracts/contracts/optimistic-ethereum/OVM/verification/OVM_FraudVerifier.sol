@@ -149,11 +149,52 @@ contract OVM_FraudVerifier is Lib_AddressResolver, Abs_FraudContributor, iOVM_Fr
             return;
         }
 
+
+        if (_verifyAllByChainId(
+                _chainId, 
+                _preStateRoot, 
+                _preStateRootBatchHeader,
+                _preStateRootProof,
+                _transaction,
+                _txChainElement,
+                _transactionBatchHeader,
+                _transactionProof)){
+            return;
+        }
+
+        _deployTransitioner(_chainId, _preStateRoot, _txHash, _preStateRootProof.index);
+
+        emit FraudProofInitialized(
+            _chainId,
+            _preStateRoot,
+            _preStateRootProof.index,
+            _txHash,
+            msg.sender
+        );
+    }
+    
+    /* add for stack too deep */
+    function _verifyAllByChainId(
+        uint256 _chainId,
+        bytes32 _preStateRoot,
+        Lib_OVMCodec.ChainBatchHeader memory _preStateRootBatchHeader,
+        Lib_OVMCodec.ChainInclusionProof memory _preStateRootProof,
+        Lib_OVMCodec.Transaction memory _transaction,
+        Lib_OVMCodec.TransactionChainElement memory _txChainElement,
+        Lib_OVMCodec.ChainBatchHeader memory _transactionBatchHeader,
+        Lib_OVMCodec.ChainInclusionProof memory _transactionProof
+    )   
+        internal
+        view
+        returns (
+            bool _exists
+        )
+    {
+    
         iOVM_StateCommitmentChain ovmStateCommitmentChain =
             iOVM_StateCommitmentChain(resolve("OVM_StateCommitmentChain"));
         iOVM_CanonicalTransactionChain ovmCanonicalTransactionChain =
             iOVM_CanonicalTransactionChain(resolve("OVM_CanonicalTransactionChain"));
-
         require(
             ovmStateCommitmentChain.verifyStateCommitmentByChainId(
                 _chainId,
@@ -180,18 +221,9 @@ contract OVM_FraudVerifier is Lib_AddressResolver, Abs_FraudContributor, iOVM_Fr
             _preStateRootBatchHeader.prevTotalElements + _preStateRootProof.index + 1 == _transactionBatchHeader.prevTotalElements + _transactionProof.index,
             "Pre-state root global index must equal to the transaction root global index."
         );
-
-        _deployTransitioner(_chainId, _preStateRoot, _txHash, _preStateRootProof.index);
-
-        emit FraudProofInitialized(
-            _chainId,
-            _preStateRoot,
-            _preStateRootProof.index,
-            _txHash,
-            msg.sender
-        );
+        _exists = false;
     }
-
+    
     /**
      * Finalizes the fraud verification process.
      * @param _preStateRoot State root before the fraudulent transaction.
@@ -240,7 +272,7 @@ contract OVM_FraudVerifier is Lib_AddressResolver, Abs_FraudContributor, iOVM_Fr
         public
         contributesToFraudProof(_chainId, _preStateRoot, _txHash)
     {
-        iOVM_StateTransitioner transitioner = getStateTransitioner(_chainId, _preStateRoot, _txHash);
+        iOVM_StateTransitioner transitioner = getStateTransitionerByChainId(_chainId, _preStateRoot, _txHash);
         iOVM_StateCommitmentChain ovmStateCommitmentChain =
             iOVM_StateCommitmentChain(resolve("OVM_StateCommitmentChain"));
 
@@ -284,9 +316,8 @@ contract OVM_FraudVerifier is Lib_AddressResolver, Abs_FraudContributor, iOVM_Fr
         _cancelStateTransition(_chainId, _postStateRootBatchHeader, _preStateRoot);
 
         // TEMPORARY: Remove the transitioner; for minnet.
-        transitioners[_chainId][keccak256(abi.encodePacked(_preStateRoot, _txHash))] =
-            iOVM_StateTransitioner(0x0000000000000000000000000000000000000000);
-
+        _resetTransitioner(_chainId,_preStateRoot,_txHash);
+        
         emit FraudProofFinalized(
             _chainId,
             _preStateRoot,
@@ -300,6 +331,17 @@ contract OVM_FraudVerifier is Lib_AddressResolver, Abs_FraudContributor, iOVM_Fr
     /************************************
      * Internal Functions: Verification *
      ************************************/
+    /* add for stack too deep error*/
+    function _resetTransitioner(
+        uint256 _chainId,
+        bytes32 _preStateRoot,
+        bytes32 _txHash
+    )internal
+    {
+    
+        transitioners[_chainId][keccak256(abi.encodePacked(_preStateRoot, _txHash))] =
+            iOVM_StateTransitioner(0x0000000000000000000000000000000000000000);
+    }
 
     /**
      * Checks whether a transitioner already exists for a given pre-state root.
@@ -338,6 +380,7 @@ contract OVM_FraudVerifier is Lib_AddressResolver, Abs_FraudContributor, iOVM_Fr
             iOVM_StateTransitionerFactory(
                 resolve("OVM_StateTransitionerFactory")
             ).create(
+                _chainId,
                 address(libAddressManager),
                 _stateTransitionIndex,
                 _preStateRoot,

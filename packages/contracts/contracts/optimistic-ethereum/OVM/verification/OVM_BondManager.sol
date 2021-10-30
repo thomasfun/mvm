@@ -222,7 +222,7 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
 
     /// Checks if the user is collateralized
     function isCollateralized(address who) override public view returns (bool) {
-        return bonds[who].state == State.COLLATERALIZED;
+        return bonds[DefaultChainId][who].state == State.COLLATERALIZED;
     }
 
     
@@ -232,7 +232,7 @@ contract OVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
         address _prop
     ) override public view returns (bool) {
         require(_who==_prop,"sender must the proposer!");
-        return bonds[_who].state == State.COLLATERALIZED;
+        return bonds[_chainId][_who].state == State.COLLATERALIZED;
     }
 
 

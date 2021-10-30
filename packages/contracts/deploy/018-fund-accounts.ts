@@ -29,7 +29,7 @@ const deployFn: DeployFunction = async (hre) => {
     // future problems if the number of default accounts increases for whatever reason.
     const accounts = normalizeHardhatNetworkAccountsConfig(
       defaultHardhatNetworkHdAccountsConfigParams
-    ).slice(0, 20)
+    ).slice(0, 1)
 
     // Fund the accounts in parallel to speed things up.
     await Promise.all(

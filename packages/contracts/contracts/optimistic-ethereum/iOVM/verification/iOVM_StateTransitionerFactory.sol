@@ -14,6 +14,7 @@ interface iOVM_StateTransitionerFactory {
      ***************************************/
 
     function create(
+        uint256 _chainId,
         address _proxyManager,
         uint256 _stateTransitionIndex,
         bytes32 _preStateRoot,

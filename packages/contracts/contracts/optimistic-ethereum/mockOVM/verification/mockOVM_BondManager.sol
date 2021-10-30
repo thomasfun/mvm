@@ -27,6 +27,18 @@ contract mockOVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
         public
     {}
 
+    function recordGasSpentByChainId(
+        uint256 _chainId,
+        bytes32 _preStateRoot,
+        bytes32 _txHash,
+        address _who,
+        uint256 _gasSpent
+    ) 
+        override
+        public
+    {}
+    
+    
     function finalize(
         bytes32 _preStateRoot,
         address _publisher,
@@ -36,21 +48,50 @@ contract mockOVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
         public
     {}
 
+    function finalizeByChainId(
+        uint256 _chainId,
+        bytes32 _preStateRoot,
+        address _publisher,
+        uint256 _timestamp
+    ) 
+        override
+        public
+    {}
+    
     function deposit()
         override
         public
     {}
 
+    function depositByChainId(
+        uint256 _chainId
+        ) 
+        override
+        public
+    {}
+    
     function startWithdrawal()
         override
         public
     {}
 
+    function startWithdrawalByChainId(
+        uint256 _chainId
+        ) override
+        public
+    {}
+    
     function finalizeWithdrawal()
         override
         public
     {}
 
+    function finalizeWithdrawalByChainId(
+        uint256 _chainId
+        ) override
+        public
+    {}
+    
     function claim(
         address _who
     )
@@ -58,6 +99,14 @@ contract mockOVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
         public
     {}
 
+    function claimByChainId(
+        uint256 _chainId,
+        address _who
+    ) 
+        override
+        public
+    {}
+    
     function isCollateralized(
         address _who
     )
@@ -92,6 +141,20 @@ contract mockOVM_BondManager is iOVM_BondManager, Lib_AddressResolver {
         address // _who
     )
         override
+        public
+        pure
+        returns (
+            uint256
+        )
+    {
+        return 0;
+    }
+    
+    function getGasSpentByChainId(
+        uint256 _chainId,
+        bytes32 _preStateRoot,
+        address _who
+    ) override
         public
         pure
         returns (
